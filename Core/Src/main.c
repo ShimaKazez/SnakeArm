@@ -45,6 +45,7 @@
 #include "FOC.h"
 #include "CAN_Com.h"
 #include "DrEmpower_can.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
