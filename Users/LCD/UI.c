@@ -1,0 +1,306 @@
+/*
+ * UI.c
+ *
+ *  Created on: Feb 28, 2024
+ *      Author: Cross
+ */
+
+#include "UI.h"
+
+volatile HOME Home;
+int KEY_Flag[4];
+int KEY_FlagOld[4];
+int KEY_Reflash[4];
+int Screen_Seq;
+int ErrorFlag;
+uint8_t cRed, cGreen, cBlue;
+volatile int Program_Flag[4];
+volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
+
+int numlen(double num) {
+	int len = 1;
+	while ((int) (num /= 10)) {
+		len++;
+	}
+	return len;
+}
+
+void UI_Startup(void) {
+	float X, Y, R;
+	Paint_ClearWindows(0, 0, 239, 134, BLACK);
+	for (int i = 0; i < 100; i++) {
+		X = 120;
+		Y = 135 - (10000 - ((100 - i) * (100 - i))) * 67 / 10000;
+		R = 5;
+		Paint_DrawCircle(X, Y, R, GBLUE, 1, 0);
+		HAL_Delay(5);
+		Paint_DrawCircle(X, Y, R, BLACK, 1, 0);
+	}
+	HAL_Delay(200);
+	for (int i = 0; i < 12; i++) {
+		X = 119;
+		Y = 67;
+		R = i * i + 5;
+		Paint_DrawCircle(X, Y, R, RGB888ToRGB565(rand() % 255, rand() % 255, rand() % 255), 1, 0);
+		HAL_Delay(5);
+		Paint_DrawCircle(X, Y, R, BLACK, 1, 0);
+	}
+	for (int i = 0; i < 20; i++) {
+		X = rand() % 239;
+		Y = rand() % 134;
+		R = rand() % 50;
+		Paint_DrawCircle(X, Y, R, RGB888ToRGB565(rand() % 255, rand() % 255, rand() % 255), 1, 0);
+		HAL_Delay(20);
+	}
+	Paint_ClearWindows(39, 44, 200, 90, BLACK);
+	Paint_DrawString_EN(43, 49, "AxDrive-L", &Font24, BLACK, GBLUE);
+	Paint_DrawString_EN(64, 73, "Ver.202403", &Font16, BLACK, GBLUE);
+	HAL_Delay(1000);
+	Paint_ClearWindows(0, 0, 239, 134, BLACK);
+}
+
+void Parameters_Reflash(void) {
+	Paint_DrawFloatNum(154, 7, Home.status[0].num1, 6 - numlen(Home.status[0].num1), &Font16, BLACK, Home.status[0].Color);
+	Paint_DrawFloatNum(154, 26, Home.status[1].num1, 6 - numlen(Home.status[1].num1), &Font16, BLACK, Home.status[1].Color);
+	Paint_DrawFloatNum(154, 45, Home.status[2].num1, 6 - numlen(Home.status[2].num1), &Font16, BLACK, Home.status[2].Color);
+	Paint_DrawFloatNum(58, 63, Home.params[0].num1, 5 - numlen(Home.params[0].num1), &Font16, BLACK, Home.status[0].Color);
+	Paint_DrawFloatNum(58, 81, Home.params[1].num1, 5 - numlen(Home.params[1].num1), &Font16, BLACK, Home.params[1].Color);
+	Paint_DrawFloatNum(58, 99, Home.params[2].num1, 5 - numlen(Home.params[2].num1), &Font16, BLACK, Home.params[2].Color);
+	Paint_DrawFloatNum(58, 117, Home.params[3].num1, 5 - numlen(Home.params[3].num1), &Font16, BLACK, Home.params[3].Color);
+}
+
+void Targets_Reflash(void) {
+	Paint_DrawFloatNum(165, 63, Home.params[0].num2, 5 - numlen(Home.params[0].num2), &Font16, BLACK, Home.status[0].Color);
+	Paint_DrawFloatNum(165, 81, Home.params[1].num2, 5 - numlen(Home.params[1].num2), &Font16, BLACK, Home.params[1].Color);
+	Paint_DrawFloatNum(165, 99, Home.params[2].num2, 5 - numlen(Home.params[2].num2), &Font16, BLACK, Home.params[2].Color);
+	Paint_DrawFloatNum(165, 117, Home.params[3].num2, 5 - numlen(Home.params[3].num2), &Font16, BLACK, Home.params[3].Color);
+}
+
+void Status_Reflash(void) {
+	Paint_ClearWindows(0, 12, 120, 36, BLACK);
+	Paint_DrawString_EN((120 - strlen((char*) Home.flag.Label) * 17) / 2 + 2, 12, (char*) Home.flag.Label, &Font24, BLACK, Home.flag.Color);
+	Paint_ClearWindows(0, 40, 120, 56, BLACK);
+	Paint_DrawString_EN((120 - strlen((char*) Home.mode.Label) * 11) / 2 + 2, 40, (char*) Home.mode.Label, &Font16, BLACK, Home.mode.Color);
+}
+
+void KEY_Scan(void) {
+	KEY_FlagOld[0] = KEY_Flag[0];
+	KEY_FlagOld[1] = KEY_Flag[1];
+	KEY_FlagOld[2] = KEY_Flag[2];
+	KEY_FlagOld[3] = KEY_Flag[3];
+	KEY_Flag[0] = !HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin);
+	KEY_Flag[1] = !HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin);
+	KEY_Flag[2] = !HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin);
+	KEY_Flag[3] = !HAL_GPIO_ReadPin(KEY4_GPIO_Port, KEY4_Pin);
+	KEY_Reflash[0] = KEY_Flag[0] ^ KEY_FlagOld[0];
+	KEY_Reflash[1] = KEY_Flag[1] ^ KEY_FlagOld[1];
+	KEY_Reflash[2] = KEY_Flag[2] ^ KEY_FlagOld[2];
+	KEY_Reflash[3] = KEY_Flag[3] ^ KEY_FlagOld[3];
+
+	/*--------KEY1 PUSH--------*/
+	if (KEY_Reflash[0]) {
+		if (KEY_Flag[0]) {
+			Home.flag.Label = "[AUTO]";
+			Home.flag.Color = BLUE;
+			Home.mode.Label = "ClosedLoop";
+			Home.mode.Color = WHITE;
+			Program_Flag[0] = 1;
+			Program_Flag[1] = 0;
+			Program_Flag[2] = 0;
+			Program_Flag[3] = 0;
+		} else {
+			Home.flag.Label = "[READY]";
+			Home.flag.Color = GREEN;
+			Home.mode.Label = "RdToWork";
+			Home.mode.Color = WHITE;
+			Program_Flag[0] = 0;
+			C620_Control.Current3 = 0;
+			//FDCAN_Transmit();
+			Home.params[2].num2 = (float) C620_Control.Current3;
+		}
+		goto Reflash;
+	}
+	/*--------KEY2 CLICK--------*/
+	if (KEY_Reflash[1]) {
+		if (Program_Flag[1]) {
+			Home.flag.Label = "[TC1]";
+			Home.flag.Color = MAGENTA;
+			Home.mode.Label = "Single";
+			Home.mode.Color = WHITE;
+		} else {
+			Home.flag.Label = "[READY]";
+			Home.flag.Color = GREEN;
+			Home.mode.Label = "RdToWork";
+			Home.mode.Color = WHITE;
+		}
+		if (KEY_Flag[1]) {
+			Program_Flag[0] = 0;
+			Program_Flag[2] = 0;
+			Program_Flag[3] = 0;
+			Program_Flag[1] = !Program_Flag[1];
+		}
+		goto Reflash;
+	}
+	/*--------KEY3 CLICK--------*/
+	if (KEY_Reflash[2]) {
+		if (Program_Flag[2]) {
+			Home.flag.Label = "[TC]";
+			Home.flag.Color = GRED;
+			Home.mode.Label = "Torque";
+			Home.mode.Color = WHITE;
+		} else {
+			Home.flag.Label = "[READY]";
+			Home.flag.Color = GREEN;
+			Home.mode.Label = "RdToWork";
+			Home.mode.Color = WHITE;
+		}
+		if (KEY_Flag[2]) {
+			Program_Flag[0] = 0;
+			Program_Flag[1] = 0;
+			Program_Flag[3] = 0;
+			Program_Flag[2] = !Program_Flag[2];
+		}
+		goto Reflash;
+	}
+	/*--------KEY4 CLICK--------*/
+	if (KEY_Reflash[3]) {
+		if (Program_Flag[3]) {
+			Home.flag.Label = "[UtoC]";
+			Home.flag.Color = YELLOW;
+			Home.mode.Label = "Sending";
+			Home.mode.Color = WHITE;
+		} else {
+			Home.flag.Label = "[READY]";
+			Home.flag.Color = GREEN;
+			Home.mode.Label = "RdToWork";
+			Home.mode.Color = WHITE;
+		}
+		if (KEY_Flag[3]) {
+			Program_Flag[0] = 0;
+			Program_Flag[1] = 0;
+			Program_Flag[2] = 0;
+			Program_Flag[3] = !Program_Flag[3];
+		}
+		goto Reflash;
+	}
+
+	Reflash: if (KEY_Reflash[0] || KEY_Reflash[1] || KEY_Reflash[2] || KEY_Reflash[3]) {
+		Status_Reflash_Flag = 1;
+	}
+	Targets_Reflash_Flag = 1;
+}
+
+void Homepage_Init(void) {
+	Home.flag.Label = "[READY]";
+	Home.flag.Color = GREEN;
+
+	Home.status[0].Label = "V:";
+	Home.status[0].Color = WHITE;
+	Home.status[0].num1 = 0;
+
+	Home.status[1].Label = "C:";
+	Home.status[1].Color = WHITE;
+	Home.status[1].num1 = 0;
+
+	Home.status[2].Label = "T:";
+	Home.status[2].Color = WHITE;
+	Home.status[2].num1 = 0;
+
+	Home.mode.Label = "Initiating";
+	Home.mode.Color = WHITE;
+
+	Home.params[0].Label = "ANG:";
+	Home.params[0].Color = WHITE;
+	Home.params[0].num1 = 0;
+
+	Home.params[1].Label = "SPD:";
+	Home.params[1].Color = WHITE;
+	Home.params[1].num1 = 0;
+
+	Home.params[2].Label = "TOR:";
+	Home.params[2].Color = WHITE;
+	Home.params[2].num1 = 0;
+
+	Home.params[3].Label = "Tp1:";
+	Home.params[3].Color = WHITE;
+	Home.params[3].num1 = 0;
+
+	Paint_DrawString_EN(125, 5, (char*) Home.status[0].Label, &Font20, BLACK, GBLUE);
+	Paint_DrawString_EN(125, 24, (char*) Home.status[1].Label, &Font20, BLACK, GBLUE);
+	Paint_DrawString_EN(125, 43, (char*) Home.status[2].Label, &Font20, BLACK, GBLUE);
+
+	Paint_DrawString_EN(5, 63, (char*) Home.params[0].Label, &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(5, 81, (char*) Home.params[1].Label, &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(5, 99, (char*) Home.params[2].Label, &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(5, 117, (char*) Home.params[3].Label, &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(132, 63, "r>", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(132, 81, "|>", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(132, 99, "->", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(132, 117, "->", &Font16, BLACK, GBLUE);
+
+	Status_Reflash();
+	Parameters_Reflash();
+	Targets_Reflash();
+}
+
+void UI_Init(void) {
+	DEV_Module_Init();
+	LCD_1IN14_SetBackLight(SET);
+	LCD_1IN14_Init(HORIZONTAL);
+	Paint_NewImage(LCD_1IN14.WIDTH, LCD_1IN14.HEIGHT, ROTATE_180, WHITE);
+	Paint_SetClearFuntion(LCD_1IN14_Clear);
+	Paint_SetDisplayFuntion(LCD_1IN14_DrawPaint);
+	UI_Startup();
+	Homepage_Init();
+	Home.flag.Label = "[READY]";
+	Home.flag.Color = GREEN;
+	Home.mode.Label = "RdToWork";
+	Home.mode.Color = WHITE;
+	Status_Reflash();
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (Screen_Seq > 90)
+		Screen_Seq = 0;
+	if (Screen_Seq >= 5)
+		Paint_ClearWindows((Screen_Seq - 10) * 3, 133, (Screen_Seq - 9) * 3, 134, BLACK);
+	if (Screen_Seq <= 80) {
+		if (Screen_Seq >= 0 && Screen_Seq <= 27) {
+			cRed = Screen_Seq * 9 + 10;
+			cGreen = 0;
+			cBlue = (27 - Screen_Seq) * 9 + 10;
+		}
+		if (Screen_Seq > 27 && Screen_Seq <= 54) {
+			cRed = (54 - Screen_Seq) * 9 + 10;
+			cGreen = (Screen_Seq - 28) * 9 + 10;
+			cBlue = 0;
+		}
+		if (Screen_Seq > 54 && Screen_Seq <= 80) {
+			cRed = 0;
+			cGreen = (80 - Screen_Seq) * 9 + 10;
+			cBlue = (Screen_Seq - 55) * 9 + 10;
+		}
+		Paint_ClearWindows(Screen_Seq * 3, 133, (Screen_Seq + 1) * 3, 134, RGB888ToRGB565(cRed, cGreen, cBlue));
+	}
+	Screen_Seq++;
+
+	if (ErrorFlag) {
+		Home.flag.Label = "ERROR";
+		Home.flag.Color = RED;
+	} else {
+		KEY_Scan();
+	}
+	if (Parameters_Reflash_Flag) {
+		Parameters_Reflash();
+		Parameters_Reflash_Flag = 0;
+	}
+	if (Targets_Reflash_Flag) {
+		Targets_Reflash();
+		Targets_Reflash_Flag = 0;
+	}
+	if (Status_Reflash_Flag) {
+		Status_Reflash();
+		Status_Reflash_Flag = 0;
+	}
+	HAL_TIM_Base_Start_IT(&htim17);
+}
