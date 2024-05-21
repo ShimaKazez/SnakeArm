@@ -55,9 +55,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-extern volatile UART_RX UART_Rx;
-//extern volatile uint32_t UART_RxLength;
-extern volatile float TMset1, TMset2, TMset3, TMset7;
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -68,7 +66,8 @@ extern volatile float TMset1, TMset2, TMset3, TMset7;
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+extern volatile uint8_t Mset_Pattern[3];
+extern volatile float Mset_Data[3];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,7 +78,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-FLASH_OBProgramInitTypeDef OptionsByteStruct;
+//FLASH_OBProgramInitTypeDef OptionsByteStruct;
 /* USER CODE END 0 */
 
 /**
@@ -183,31 +182,30 @@ int main(void) {
 		KEY_Scan();
 
 		if (Program_Flag[0]) {
-			Home.params[1].num2 = 600;
-			C620_Control.Current3 = PID_realize(Home.params[1].num2, Home.params[1].num1);
-			Home.params[2].num2 = (float) C620_Control.Current3;
-			Targets_Reflash_Flag = 1;
+			//Home.params[1].num2 = 600;
+			//C620_Control.Current3 = PID_realize(Home.params[1].num2, Home.params[1].num1);
+			//Home.params[2].num2 = (float) C620_Control.Current3;
+			//Targets_Reflash_Flag = 1;
 			//FDCAN_Transmit();
 			HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
 			HAL_GPIO_WritePin(GPIOC, LED2_Pin, RESET);
 		} else {
-			pid.integral = 0;
+			//pid.integral = 0;
 		}
 		if (Program_Flag[1]) {
 			if (!TC_INIT_Flag_1) {
 				/////**************设置零点位置*************////////
-				set_zero_position(7); //给 1 号关节设置零点
+				set_zero_position(1); //给 1 号关节设置零点
 				/////**************开启角度、转速、力矩实时反馈*************////////
-				enable_angle_speed_torque_state(7);
-				set_state_feedback_rate_ms(7, 2);
+				enable_angle_speed_torque_state(1);
+				set_state_feedback_rate_ms(1, 2);
 				HAL_Delay(200);
 				TC_INIT_Flag_1 = 1;
 			}
-			angle_speed_torque_1 = angle_speed_torque_state(7);
+			angle_speed_torque_1 = angle_speed_torque_state(1);
 			Home.params[0].num1 = angle_speed_torque_1.angle;
 			Home.params[1].num1 = angle_speed_torque_1.speed;
 			Home.params[2].num1 = angle_speed_torque_1.torque;
-			Home.params[0].num2 = TMset7;
 			vofa_send_data(0, angle_speed_torque_1.angle);
 			vofa_send_data(1, angle_speed_torque_1.speed);
 			vofa_send_data(2, angle_speed_torque_1.torque);
@@ -218,10 +216,22 @@ int main(void) {
 			vofa_send_data(7, angle_speed_torque_3.speed);
 			vofa_send_data(8, angle_speed_torque_3.torque);
 			vofa_sendframetail();
-			Parameters_Reflash_Flag = 1;
-			/////**************单个关节力矩控制*************////////
-			set_torque(7, TMset7, 1, 0);
 
+			Home.params[0].num2 = Mset_Data[0];
+			switch (Mset_Pattern[0]) {
+			case 20:
+				set_torque(1, Mset_Data[0], 1, 0);
+				break;
+			case 16:
+				set_angle(1, Mset_Data[0], 0, 0, 1);
+				break;
+			case 22:
+				set_speed(1, Mset_Data[0], 1000, 1);
+				break;
+			default:
+				estop(0);
+			}
+			Parameters_Reflash_Flag = 1;
 			HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
 			HAL_GPIO_WritePin(GPIOC, LED2_Pin, SET);
 			//FDCAN_Receive();
@@ -252,9 +262,22 @@ int main(void) {
 			Home.params[0].num1 = angle_speed_torque_1.angle;
 			Home.params[1].num1 = angle_speed_torque_1.speed;
 			Home.params[2].num1 = angle_speed_torque_1.torque;
-			Home.params[0].num2 = TMset1;
-			Home.params[1].num2 = TMset2;
-			Home.params[2].num2 = TMset3;
+			for (int i = 0; i < 3; i++) {
+				Home.params[i].num2 = Mset_Data[i];
+				switch (Mset_Pattern[i]) {
+				case 20:
+					set_torque(i + 1, Mset_Data[i], 1, 0);
+					break;
+				case 16:
+					set_angle(i + 1, Mset_Data[i], 0, 0, 1);
+					break;
+				case 22:
+					set_speed(i + 1, Mset_Data[i], 1000, 1);
+					break;
+				default:
+					estop(0);
+				}
+			}
 			vofa_send_data(0, angle_speed_torque_1.angle);
 			vofa_send_data(1, angle_speed_torque_1.speed);
 			vofa_send_data(2, angle_speed_torque_1.torque);
@@ -266,17 +289,11 @@ int main(void) {
 			vofa_send_data(8, angle_speed_torque_3.torque);
 			vofa_sendframetail();
 			Parameters_Reflash_Flag = 1;
-			/////**************单个关节力矩控制*************////////
-			set_torque(1, TMset1, 1, 0);
-			set_torque(2, TMset2, 1, 0);
-			set_torque(3, TMset3, 1, 0);
 
 			HAL_GPIO_WritePin(GPIOC, LED1_Pin, SET);
 			HAL_GPIO_WritePin(GPIOC, LED2_Pin, RESET);
 		} else {
-			estop(1);
-			estop(2);
-			estop(3);
+			estop(0);
 		}
 		if (Program_Flag[3]) {
 			//C620_Control.Current3 = UART_RxBuffer[1] << 8 | UART_RxBuffer[0];

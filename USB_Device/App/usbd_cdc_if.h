@@ -34,19 +34,19 @@
 /* USER CODE END INCLUDE */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
-  * @brief For Usb device.
-  * @{
-  */
+ * @brief For Usb device.
+ * @{
+ */
 
 /** @defgroup USBD_CDC_IF USBD_CDC_IF
-  * @brief Usb VCP device module
-  * @{
-  */
+ * @brief Usb VCP device module
+ * @{
+ */
 
 /** @defgroup USBD_CDC_IF_Exported_Defines USBD_CDC_IF_Exported_Defines
-  * @brief Defines.
-  * @{
-  */
+ * @brief Defines.
+ * @{
+ */
 /* Define size for the receive and transmit buffer over CDC */
 #define APP_RX_DATA_SIZE  1024
 #define APP_TX_DATA_SIZE  1024
@@ -55,82 +55,83 @@
 /* USER CODE END EXPORTED_DEFINES */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup USBD_CDC_IF_Exported_Types USBD_CDC_IF_Exported_Types
-  * @brief Types.
-  * @{
-  */
+ * @brief Types.
+ * @{
+ */
 
 /* USER CODE BEGIN EXPORTED_TYPES */
 
 /* USER CODE END EXPORTED_TYPES */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup USBD_CDC_IF_Exported_Macros USBD_CDC_IF_Exported_Macros
-  * @brief Aliases.
-  * @{
-  */
+ * @brief Aliases.
+ * @{
+ */
 
 /* USER CODE BEGIN EXPORTED_MACRO */
 
 /* USER CODE END EXPORTED_MACRO */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup USBD_CDC_IF_Exported_Variables USBD_CDC_IF_Exported_Variables
-  * @brief Public variables.
-  * @{
-  */
+ * @brief Public variables.
+ * @{
+ */
 
 /** CDC Interface callback. */
 extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-typedef union{
+typedef union {
 	volatile uint8_t UART_RxBuffer[8];
-	struct{
+	struct {
 		volatile float RxData1;
 		volatile float RxData2;
-	}Rx;
-}UART_RX;
+	} Rx;
+} UART_RX;
 extern volatile UART_RX UART_Rx;
 extern volatile uint32_t UART_RxLength;
-extern volatile float TMset1,TMset2,TMset3,TMset7;
+extern volatile uint8_t Mset_Pattern[3];
+extern volatile float Mset_Data[3];
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup USBD_CDC_IF_Exported_FunctionsPrototype USBD_CDC_IF_Exported_FunctionsPrototype
-  * @brief Public functions declaration.
-  * @{
-  */
+ * @brief Public functions declaration.
+ * @{
+ */
 
-uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
+uint8_t CDC_Transmit_FS(uint8_t *Buf, uint16_t Len);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
 
 /* USER CODE END EXPORTED_FUNCTIONS */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 #ifdef __cplusplus
 }
