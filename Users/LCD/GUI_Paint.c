@@ -607,7 +607,7 @@ void Paint_DrawChar(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char, sFONT *Fo
 	LCD_1IN14_DC_1
 	;
 	LCD_1IN14_CS_0;
-	HAL_SPI_Transmit(DEV_SPI_PORT, (uint8_t*) Char_Buffer, sizeof(Char_Buffer),500);
+	HAL_SPI_Transmit(DEV_SPI_PORT, (uint8_t*) Char_Buffer, sizeof(Char_Buffer), 500);
 	LCD_1IN14_CS_1;
 }
 
