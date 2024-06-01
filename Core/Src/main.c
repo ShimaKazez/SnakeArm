@@ -163,7 +163,7 @@ int main(void) {
 		Home.status[0].num1 = 3.3 * 16 * (float) ADC_Value2[4] / 4096;
 		Home.status[1].num1 = (float) NTC_Cov(ADC_Value1[5]);
 		Home.status[2].num1 = (float) NTC_Cov(ADC_Value2[5]);
-		Parameters_Reflash_Flag = 1;
+		//Parameters_Reflash_Flag = 1;
 		/* for DJI C620 with M3508
 		 FDCAN_Receive();
 		 Home.params[0].num1 = (float) C620_Status.Angle * 360 / 8191;
@@ -187,6 +187,7 @@ int main(void) {
 			//Home.params[2].num2 = (float) C620_Control.Current3;
 			//Targets_Reflash_Flag = 1;
 			//FDCAN_Transmit();
+			Parameters_Reflash_Flag = 1;
 			HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
 			HAL_GPIO_WritePin(GPIOC, LED2_Pin, RESET);
 		} else {
@@ -206,17 +207,6 @@ int main(void) {
 			Home.params[0].num1 = angle_speed_torque_1.angle;
 			Home.params[1].num1 = angle_speed_torque_1.speed;
 			Home.params[2].num1 = angle_speed_torque_1.torque;
-			vofa_send_data(0, angle_speed_torque_1.angle);
-			vofa_send_data(1, angle_speed_torque_1.speed);
-			vofa_send_data(2, angle_speed_torque_1.torque);
-			vofa_send_data(3, angle_speed_torque_2.angle);
-			vofa_send_data(4, angle_speed_torque_2.speed);
-			vofa_send_data(5, angle_speed_torque_2.torque);
-			vofa_send_data(6, angle_speed_torque_3.angle);
-			vofa_send_data(7, angle_speed_torque_3.speed);
-			vofa_send_data(8, angle_speed_torque_3.torque);
-			vofa_sendframetail();
-
 			Home.params[0].num2 = Mset_Data[0];
 			switch (Mset_Pattern[0]) {
 			case 20:
@@ -231,6 +221,9 @@ int main(void) {
 			default:
 				estop(0);
 			}
+			Drivers.driver1.angle=angle_speed_torque_1.angle;
+			Drivers.driver1.speed=angle_speed_torque_1.speed;
+			Drivers.driver1.torque=angle_speed_torque_1.torque;
 			Parameters_Reflash_Flag = 1;
 			HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
 			HAL_GPIO_WritePin(GPIOC, LED2_Pin, SET);
@@ -278,16 +271,15 @@ int main(void) {
 					estop(0);
 				}
 			}
-			vofa_send_data(0, angle_speed_torque_1.angle);
-			vofa_send_data(1, angle_speed_torque_1.speed);
-			vofa_send_data(2, angle_speed_torque_1.torque);
-			vofa_send_data(3, angle_speed_torque_2.angle);
-			vofa_send_data(4, angle_speed_torque_2.speed);
-			vofa_send_data(5, angle_speed_torque_2.torque);
-			vofa_send_data(6, angle_speed_torque_3.angle);
-			vofa_send_data(7, angle_speed_torque_3.speed);
-			vofa_send_data(8, angle_speed_torque_3.torque);
-			vofa_sendframetail();
+			Drivers.driver1.angle=angle_speed_torque_1.angle;
+			Drivers.driver1.speed=angle_speed_torque_1.speed;
+			Drivers.driver1.torque=angle_speed_torque_1.torque;
+			Drivers.driver2.angle=angle_speed_torque_2.angle;
+			Drivers.driver2.speed=angle_speed_torque_2.speed;
+			Drivers.driver2.torque=angle_speed_torque_2.torque;
+			Drivers.driver3.angle=angle_speed_torque_3.angle;
+			Drivers.driver3.speed=angle_speed_torque_3.speed;
+			Drivers.driver3.torque=angle_speed_torque_3.torque;
 			Parameters_Reflash_Flag = 1;
 
 			HAL_GPIO_WritePin(GPIOC, LED1_Pin, SET);
@@ -299,7 +291,7 @@ int main(void) {
 			//C620_Control.Current3 = UART_RxBuffer[1] << 8 | UART_RxBuffer[0];
 			//Home.params[2].num2 = UART_Rx.Rx.RxData1;
 			//FDCAN_Transmit();
-			Targets_Reflash_Flag = 1;
+			//Targets_Reflash_Flag = 1;
 			HAL_GPIO_WritePin(GPIOC, LED1_Pin, SET);
 			HAL_GPIO_WritePin(GPIOC, LED2_Pin, SET);
 		} else {

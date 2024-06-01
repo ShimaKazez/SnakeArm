@@ -6,8 +6,10 @@
  */
 
 #include "UI.h"
+#include "Vofa+.h"
 
 volatile HOME Home;
+volatile DriverS Drivers;
 int KEY_Flag[4];
 int KEY_FlagOld[4];
 int KEY_Reflash[4];
@@ -260,6 +262,8 @@ void UI_Init(void) {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	HAL_TIM_Base_Start_IT(&htim17);
+
 	if (Screen_Seq > 90)
 		Screen_Seq = 0;
 	if (Screen_Seq >= 5)
@@ -291,16 +295,25 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		KEY_Scan();
 	}
 	if (Parameters_Reflash_Flag) {
-		Parameters_Reflash();
+		//Parameters_Reflash();
+		vofa_send_data(0, Drivers.driver1.angle);
+		vofa_send_data(1, Drivers.driver1.speed);
+		vofa_send_data(2, Drivers.driver1.torque);
+		vofa_send_data(3, Drivers.driver2.angle);
+		vofa_send_data(4, Drivers.driver2.speed);
+		vofa_send_data(5, Drivers.driver2.torque);
+		vofa_send_data(6, Drivers.driver3.angle);
+		vofa_send_data(7, Drivers.driver3.speed);
+		vofa_send_data(8, Drivers.driver3.torque);
+		vofa_sendframetail();
 		Parameters_Reflash_Flag = 0;
 	}
 	if (Targets_Reflash_Flag) {
-		Targets_Reflash();
+		//Targets_Reflash();
 		Targets_Reflash_Flag = 0;
 	}
 	if (Status_Reflash_Flag) {
-		Status_Reflash();
+		//Status_Reflash();
 		Status_Reflash_Flag = 0;
 	}
-	HAL_TIM_Base_Start_IT(&htim17);
 }

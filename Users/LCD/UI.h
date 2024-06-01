@@ -44,4 +44,18 @@ typedef struct {
 } HOME;
 extern volatile HOME Home;
 
+struct DriverStatus
+{
+	float angle;
+	float speed;
+	float torque;
+};
+
+typedef struct {
+	volatile struct DriverStatus driver1;
+	volatile struct DriverStatus driver2;
+	volatile struct DriverStatus driver3;
+} DriverS;
+extern volatile DriverS Drivers;
+
 #endif /* LCD_UI_H_ */
