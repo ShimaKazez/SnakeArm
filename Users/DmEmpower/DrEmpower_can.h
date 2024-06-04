@@ -4,33 +4,29 @@
 #include <stdint.h>
 #include <stdio.h>
 
-struct servo_state
-{
-    float angle;
-    float speed;
+struct servo_state {
+	float angle;
+	float speed;
 };
 
-struct servo_volcur
-{
-    float vol;
-    float cur;
+struct servo_volcur {
+	float vol;
+	float cur;
 };
 
-struct PID
-{
-    float P;
-    float I;
-    float D;
+struct PID {
+	float P;
+	float I;
+	float D;
 };
 
-struct angle_speed_torque
-{
+struct angle_speed_torque {
 	float angle;
 	float speed;
 	float torque;
 };
 
-void format_data( float *value_data, int *type_data,int length, char * str);
+void format_data(float *value_data, int *type_data, int length, char *str);
 void preset_angle(uint8_t id_num, float angle, float t, float param, int mode);
 void preset_speed(uint8_t id_num, float speed, float param, int mode);
 void preset_torque(uint8_t id_num, float torque, float param, int mode);
@@ -50,7 +46,7 @@ void impedance_control_multi(uint8_t id_list[], float angle_list[], float speed_
 void motion_aid(uint8_t id_num, float angle, float speed, float angle_err, float speed_err, float torque);
 void motion_aid_multi(uint8_t id_list[], float angle_list[], float speed_list[], float angle_err_list[], float speed_err_list[], float torque_list[], size_t n);
 void position_done(uint8_t id_num);
-void positions_done(uint8_t *id_list,size_t n);
+void positions_done(uint8_t *id_list, size_t n);
 void set_speed(uint8_t id_num, float speed, float param, int mode);
 void set_speeds(uint8_t *id_list, float *speed_list, float param, float mode, size_t n);
 void set_torque(uint8_t id_num, float torque, float param, int mode);
@@ -69,7 +65,7 @@ void set_state_feedback_rate_ms(uint8_t id_num, uint32_t n_ms);
 struct angle_speed_torque angle_speed_torque_state(uint8_t id_num);
 void disable_angle_speed_torque_state(uint8_t id_num);
 struct PID get_pid(uint8_t id_num);
-float read_property(uint8_t id_num,int param_address, int param_type);
+float read_property(uint8_t id_num, int param_address, int param_type);
 
 /* 鍙傛暟璁剧疆 */
 void set_zero_position_temp(uint8_t id_num);
@@ -85,7 +81,7 @@ void set_torque_adaptive(uint8_t id_num, float torque_adaptive);
 void set_pid(uint8_t id_num, float P, float I, float D);
 void set_mode(uint8_t id_num, int mode);
 void set_can_baud_rate(uint8_t id_num, int baud_rate);
-void write_property(uint8_t id_num,unsigned short param_address,int8_t param_type,float value);
+void write_property(uint8_t id_num, unsigned short param_address, int8_t param_type, float value);
 void save_config(uint8_t id_num);
 
 /* 杈呭姪鍔熻兘 */

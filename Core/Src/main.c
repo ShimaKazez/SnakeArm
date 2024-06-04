@@ -143,6 +143,7 @@ int main(void) {
 
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADC_Start(&hadc1);
+	HAL_ADC_Start(&hadc2);
 
 	UI_Init();
 
@@ -160,9 +161,12 @@ int main(void) {
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		ADC_Read();
-		Home.status[0].num1 = 3.3 * 16 * (float) ADC_Value2[4] / 4096;
-		Home.status[1].num1 = (float) NTC_Cov(ADC_Value1[5]);
-		Home.status[2].num1 = (float) NTC_Cov(ADC_Value2[5]);
+		TensionSensor[0] = (float) ADC_Value2[1];
+		TensionSensor[1] = (float) ADC_Value2[2];
+		TensionSensor[2] = (float) ADC_Value1[7];
+		Home.status[0].num1 = 3.3 * 16 * (float) ADC_Value2[6] / 4096;
+		//Home.status[1].num1 = (float) NTC_Cov(ADC_Value1[6]);
+		//Home.status[2].num1 = (float) NTC_Cov(ADC_Value2[7]);
 		//Parameters_Reflash_Flag = 1;
 		/* for DJI C620 with M3508
 		 FDCAN_Receive();
@@ -221,9 +225,9 @@ int main(void) {
 			default:
 				estop(0);
 			}
-			Drivers.driver1.angle=angle_speed_torque_1.angle;
-			Drivers.driver1.speed=angle_speed_torque_1.speed;
-			Drivers.driver1.torque=angle_speed_torque_1.torque;
+			Drivers.driver1.angle = angle_speed_torque_1.angle;
+			Drivers.driver1.speed = angle_speed_torque_1.speed;
+			Drivers.driver1.torque = angle_speed_torque_1.torque;
 			Parameters_Reflash_Flag = 1;
 			HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
 			HAL_GPIO_WritePin(GPIOC, LED2_Pin, SET);
@@ -271,15 +275,15 @@ int main(void) {
 					estop(0);
 				}
 			}
-			Drivers.driver1.angle=angle_speed_torque_1.angle;
-			Drivers.driver1.speed=angle_speed_torque_1.speed;
-			Drivers.driver1.torque=angle_speed_torque_1.torque;
-			Drivers.driver2.angle=angle_speed_torque_2.angle;
-			Drivers.driver2.speed=angle_speed_torque_2.speed;
-			Drivers.driver2.torque=angle_speed_torque_2.torque;
-			Drivers.driver3.angle=angle_speed_torque_3.angle;
-			Drivers.driver3.speed=angle_speed_torque_3.speed;
-			Drivers.driver3.torque=angle_speed_torque_3.torque;
+			Drivers.driver1.angle = angle_speed_torque_1.angle;
+			Drivers.driver1.speed = angle_speed_torque_1.speed;
+			Drivers.driver1.torque = angle_speed_torque_1.torque;
+			Drivers.driver2.angle = angle_speed_torque_2.angle;
+			Drivers.driver2.speed = angle_speed_torque_2.speed;
+			Drivers.driver2.torque = angle_speed_torque_2.torque;
+			Drivers.driver3.angle = angle_speed_torque_3.angle;
+			Drivers.driver3.speed = angle_speed_torque_3.speed;
+			Drivers.driver3.torque = angle_speed_torque_3.torque;
 			Parameters_Reflash_Flag = 1;
 
 			HAL_GPIO_WritePin(GPIOC, LED1_Pin, SET);

@@ -12,7 +12,7 @@
 
 void ADC_Read(void);
 
-extern volatile uint16_t ADC_Value1[6];
-extern volatile uint16_t ADC_Value2[6];
+extern volatile uint16_t ADC_Value1[7];
+extern volatile uint16_t ADC_Value2[8];
 
 #endif /* ADC_SAMPLE_H_ */

@@ -7,8 +7,8 @@
 #include "ADC_Sample.h"
 #include "adc.h"
 
-volatile uint16_t ADC_Value1[6];
-volatile uint16_t ADC_Value2[6];
+volatile uint16_t ADC_Value1[7];
+volatile uint16_t ADC_Value2[8];
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 

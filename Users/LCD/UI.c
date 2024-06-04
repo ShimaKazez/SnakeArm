@@ -10,6 +10,7 @@
 
 volatile HOME Home;
 volatile DriverS Drivers;
+volatile float TensionSensor[3];
 int KEY_Flag[4];
 int KEY_FlagOld[4];
 int KEY_Reflash[4];
@@ -305,6 +306,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vofa_send_data(6, Drivers.driver3.angle);
 		vofa_send_data(7, Drivers.driver3.speed);
 		vofa_send_data(8, Drivers.driver3.torque);
+		vofa_send_data(9, TensionSensor[0]);
+		vofa_send_data(10, TensionSensor[1]);
+		vofa_send_data(11, TensionSensor[2]);
 		vofa_sendframetail();
 		Parameters_Reflash_Flag = 0;
 	}

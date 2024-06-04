@@ -27,6 +27,7 @@ void UI_Init(void);
 
 extern volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
 extern volatile int Program_Flag[4];
+extern volatile float TensionSensor[3];
 
 struct ELEMENT {
 	volatile char *Label;
@@ -44,8 +45,7 @@ typedef struct {
 } HOME;
 extern volatile HOME Home;
 
-struct DriverStatus
-{
+struct DriverStatus {
 	float angle;
 	float speed;
 	float torque;
