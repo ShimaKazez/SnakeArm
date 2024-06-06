@@ -165,9 +165,9 @@ int main(void) {
 		//TensionSensor[0] = (float) ADC_Value2[1];
 		//TensionSensor[1] = (float) ADC_Value2[2];
 		//TensionSensor[2] = (float) ADC_Value1[7];
-		//Home.status[0].num1 = 3.3 * 16 * (float) ADC_Value2[6] / 4096;
-		//Home.status[1].num1 = (float) NTC_Cov(ADC_Value1[6]);
-		//Home.status[2].num1 = (float) NTC_Cov(ADC_Value2[7]);
+		Home.status[0].num1 = 3.3 * 16 * (float) ADC_Value2[6] / 4096;
+		Home.status[1].num1 = (float) NTC_Cov(ADC_Value1[6]);
+		Home.status[2].num1 = SystemOccupancy;
 		//Parameters_Reflash_Flag = 1;
 		/* for DJI C620 with M3508
 		 FDCAN_Receive();
@@ -210,37 +210,45 @@ int main(void) {
 				/////**************设置零点位置*************////////
 				set_zero_position(0); //给 1 号关节设置零点
 				/////**************开启角度、转速、力矩实时反馈*************////////
-				enable_angle_speed_torque_state(1);
-				set_state_feedback_rate_ms(1, 2);
-				HAL_Delay(200);
-				enable_angle_speed_torque_state(2);
-				set_state_feedback_rate_ms(2, 2);
-				HAL_Delay(200);
-				enable_angle_speed_torque_state(3);
-				set_state_feedback_rate_ms(3, 2);
+				enable_angle_speed_torque_state(0);
+				set_state_feedback_rate_ms(0, 2);
 				HAL_Delay(200);
 				TC_INIT_Flag = 1;
 			}
 			angle_speed_torque_1 = angle_speed_torque_state(1);
 			angle_speed_torque_2 = angle_speed_torque_state(2);
 			angle_speed_torque_3 = angle_speed_torque_state(3);
-			Home.params[0].num1 = angle_speed_torque_1.angle;
-			Home.params[1].num1 = angle_speed_torque_1.speed;
-			Home.params[2].num1 = angle_speed_torque_1.torque;
+			float Angle_Data[]={angle_speed_torque_1.angle,angle_speed_torque_2.angle,angle_speed_torque_3.angle};
+			float Speed_Data[]={angle_speed_torque_1.speed,angle_speed_torque_2.speed,angle_speed_torque_3.speed};
+			float Torque_Data[]={angle_speed_torque_1.torque,angle_speed_torque_2.torque,angle_speed_torque_3.torque};
 			for (int i = 0; i < 3; i++) {
 				Home.params[i].num2 = Mset_Data[i];
 				switch (Mset_Pattern[i]) {
 				case 20:
+					if (Mset_Data[i] > 1.2) {
+						estop(0);
+						Home.flag.Label = "T_Err";
+						Home.flag.Color = RED;
+						Status_Reflash_Flag = 1;
+						Program_Flag[2] = 0;
+					}
 					set_torque(i + 1, Mset_Data[i], 1, 0);
+					Home.params[i].num1 = Torque_Data[i];
 					break;
 				case 16:
-					set_angle(i + 1, Mset_Data[i], 0, 0, 1);
+					set_angle(i + 1, Mset_Data[i], 10, 10, 1);
+					Home.params[i].num1 = Angle_Data[i];
 					break;
 				case 22:
 					set_speed(i + 1, Mset_Data[i], 1000, 1);
+					Home.params[i].num1 = Speed_Data[i];
 					break;
 				default:
 					estop(0);
+					Home.flag.Label = "LOST";
+					Home.flag.Color = RED;
+					Status_Reflash_Flag = 1;
+					Program_Flag[2] = 0;
 				}
 			}
 			Drivers.driver1.angle = angle_speed_torque_1.angle;

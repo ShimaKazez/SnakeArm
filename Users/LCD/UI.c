@@ -11,6 +11,7 @@
 volatile HOME Home;
 volatile DriverS Drivers;
 volatile float TensionSensor[3];
+volatile float SystemOccupancy;
 int KEY_Flag[4];
 int KEY_FlagOld[4];
 int KEY_Reflash[4];
@@ -21,7 +22,6 @@ int TimerLast;
 uint8_t cRed, cGreen, cBlue;
 volatile int Program_Flag[4];
 volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
-float SystemOccupancy;
 
 int numlen(double num) {
 	int len = 1;
@@ -59,17 +59,14 @@ void UI_Startup(void) {
 		HAL_Delay(20);
 	}
 	Paint_ClearWindows(39, 44, 200, 90, BLACK);
-	Paint_DrawString_EN(43, 49, "AxDrive-L", &Font24, BLACK, GBLUE);
-	Paint_DrawString_EN(64, 73, "Ver.202403", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(43, 49, "Snake Arm", &Font24, BLACK, GBLUE);
+	Paint_DrawString_EN(64, 73, "Ver.202406", &Font16, BLACK, GBLUE);
 	HAL_Delay(1000);
 	Paint_ClearWindows(0, 0, 239, 134, BLACK);
 }
 
 void Parameters_Reflash(void) {
 	ParamsReflashSteps++;
-	if (ParamsReflashSteps > 7) {
-		ParamsReflashSteps = 1;
-	}
 	switch (ParamsReflashSteps) {
 	case 1:
 		Paint_DrawFloatNum(154, 7, Home.status[0].num1, 6 - numlen(Home.status[0].num1), &Font16, BLACK, Home.status[0].Color);
@@ -92,7 +89,20 @@ void Parameters_Reflash(void) {
 	case 7:
 		Paint_DrawFloatNum(58, 117, Home.params[3].num1, 5 - numlen(Home.params[3].num1), &Font16, BLACK, Home.params[3].Color);
 		break;
+	case 8:
+		Paint_DrawFloatNum(165, 63, Home.params[0].num2, 5 - numlen(Home.params[0].num2), &Font16, BLACK, Home.status[0].Color);
+		break;
+	case 9:
+		Paint_DrawFloatNum(165, 81, Home.params[1].num2, 5 - numlen(Home.params[1].num2), &Font16, BLACK, Home.params[1].Color);
+		break;
+	case 10:
+		Paint_DrawFloatNum(165, 99, Home.params[2].num2, 5 - numlen(Home.params[2].num2), &Font16, BLACK, Home.params[2].Color);
+		break;
+	case 11:
+		Paint_DrawFloatNum(165, 117, Home.params[3].num2, 5 - numlen(Home.params[3].num2), &Font16, BLACK, Home.params[3].Color);
+		break;
 	default:
+		ParamsReflashSteps = 0;
 	}
 }
 
@@ -260,8 +270,8 @@ void Homepage_Init(void) {
 	Paint_DrawString_EN(5, 81, (char*) Home.params[1].Label, &Font16, BLACK, GBLUE);
 	Paint_DrawString_EN(5, 99, (char*) Home.params[2].Label, &Font16, BLACK, GBLUE);
 	Paint_DrawString_EN(5, 117, (char*) Home.params[3].Label, &Font16, BLACK, GBLUE);
-	Paint_DrawString_EN(132, 63, "r>", &Font16, BLACK, GBLUE);
-	Paint_DrawString_EN(132, 81, "|>", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(132, 63, "->", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(132, 81, "->", &Font16, BLACK, GBLUE);
 	Paint_DrawString_EN(132, 99, "->", &Font16, BLACK, GBLUE);
 	Paint_DrawString_EN(132, 117, "->", &Font16, BLACK, GBLUE);
 
@@ -346,7 +356,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		Targets_Reflash_Flag = 0;
 	}
 	if (Status_Reflash_Flag) {
-		//Status_Reflash();
+		Status_Reflash();
 		Status_Reflash_Flag = 0;
 	}
 	SystemOccupancy = (float) (GetMicros() - OccupancyTimer) / (TimerPeriod * 1000);

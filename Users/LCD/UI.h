@@ -29,6 +29,7 @@ long GetMicros(void);
 extern volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
 extern volatile int Program_Flag[4];
 extern volatile float TensionSensor[3];
+extern volatile float SystemOccupancy;
 
 struct ELEMENT {
 	volatile char *Label;
