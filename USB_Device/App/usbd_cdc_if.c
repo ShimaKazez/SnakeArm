@@ -258,7 +258,7 @@ static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len) {
 	for (int i = 0; i < *Len; i++) {
 		UART_Rx.UART_RxBuffer[7 - (i % 8)] = *Buf;
 		if (((i + 1) % 8) == 0) {
-			int Mset_ID = ((uint8_t) UART_Rx.Rx.RxData2 % 100) - 1;
+			int Mset_ID = ((int) UART_Rx.Rx.RxData2 % 100) - 1;
 			Mset_Pattern[Mset_ID] = ((uint8_t) UART_Rx.Rx.RxData2 / 100);
 			Mset_Data[Mset_ID] = UART_Rx.Rx.RxData1;
 		}

@@ -24,6 +24,7 @@ void Targets_Reflash(void);
 void Status_Reflash(void);
 void KEY_Scan(void);
 void UI_Init(void);
+long GetMicros(void);
 
 extern volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
 extern volatile int Program_Flag[4];

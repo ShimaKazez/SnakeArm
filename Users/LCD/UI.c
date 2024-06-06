@@ -16,9 +16,12 @@ int KEY_FlagOld[4];
 int KEY_Reflash[4];
 int Screen_Seq;
 int ErrorFlag;
+int ParamsReflashSteps, TargetReflashSteps, StatusReflashSteps;
+int TimerLast;
 uint8_t cRed, cGreen, cBlue;
 volatile int Program_Flag[4];
 volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
+float SystemOccupancy;
 
 int numlen(double num) {
 	int len = 1;
@@ -63,13 +66,34 @@ void UI_Startup(void) {
 }
 
 void Parameters_Reflash(void) {
-	Paint_DrawFloatNum(154, 7, Home.status[0].num1, 6 - numlen(Home.status[0].num1), &Font16, BLACK, Home.status[0].Color);
-	Paint_DrawFloatNum(154, 26, Home.status[1].num1, 6 - numlen(Home.status[1].num1), &Font16, BLACK, Home.status[1].Color);
-	Paint_DrawFloatNum(154, 45, Home.status[2].num1, 6 - numlen(Home.status[2].num1), &Font16, BLACK, Home.status[2].Color);
-	Paint_DrawFloatNum(58, 63, Home.params[0].num1, 5 - numlen(Home.params[0].num1), &Font16, BLACK, Home.status[0].Color);
-	Paint_DrawFloatNum(58, 81, Home.params[1].num1, 5 - numlen(Home.params[1].num1), &Font16, BLACK, Home.params[1].Color);
-	Paint_DrawFloatNum(58, 99, Home.params[2].num1, 5 - numlen(Home.params[2].num1), &Font16, BLACK, Home.params[2].Color);
-	Paint_DrawFloatNum(58, 117, Home.params[3].num1, 5 - numlen(Home.params[3].num1), &Font16, BLACK, Home.params[3].Color);
+	ParamsReflashSteps++;
+	if (ParamsReflashSteps > 7) {
+		ParamsReflashSteps = 1;
+	}
+	switch (ParamsReflashSteps) {
+	case 1:
+		Paint_DrawFloatNum(154, 7, Home.status[0].num1, 6 - numlen(Home.status[0].num1), &Font16, BLACK, Home.status[0].Color);
+		break;
+	case 2:
+		Paint_DrawFloatNum(154, 26, Home.status[1].num1, 6 - numlen(Home.status[1].num1), &Font16, BLACK, Home.status[1].Color);
+		break;
+	case 3:
+		Paint_DrawFloatNum(154, 45, Home.status[2].num1, 6 - numlen(Home.status[2].num1), &Font16, BLACK, Home.status[2].Color);
+		break;
+	case 4:
+		Paint_DrawFloatNum(58, 63, Home.params[0].num1, 5 - numlen(Home.params[0].num1), &Font16, BLACK, Home.status[0].Color);
+		break;
+	case 5:
+		Paint_DrawFloatNum(58, 81, Home.params[1].num1, 5 - numlen(Home.params[1].num1), &Font16, BLACK, Home.params[1].Color);
+		break;
+	case 6:
+		Paint_DrawFloatNum(58, 99, Home.params[2].num1, 5 - numlen(Home.params[2].num1), &Font16, BLACK, Home.params[2].Color);
+		break;
+	case 7:
+		Paint_DrawFloatNum(58, 117, Home.params[3].num1, 5 - numlen(Home.params[3].num1), &Font16, BLACK, Home.params[3].Color);
+		break;
+	default:
+	}
 }
 
 void Targets_Reflash(void) {
@@ -265,6 +289,10 @@ void UI_Init(void) {
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	HAL_TIM_Base_Start_IT(&htim17);
 
+	long OccupancyTimer = GetMicros();
+	int TimerPeriod = HAL_GetTick() - TimerLast;
+	TimerLast = HAL_GetTick();
+
 	if (Screen_Seq > 90)
 		Screen_Seq = 0;
 	if (Screen_Seq >= 5)
@@ -296,7 +324,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		KEY_Scan();
 	}
 	if (Parameters_Reflash_Flag) {
-		//Parameters_Reflash();
+		Parameters_Reflash();
 		vofa_send_data(0, Drivers.driver1.angle);
 		vofa_send_data(1, Drivers.driver1.speed);
 		vofa_send_data(2, Drivers.driver1.torque);
@@ -306,9 +334,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vofa_send_data(6, Drivers.driver3.angle);
 		vofa_send_data(7, Drivers.driver3.speed);
 		vofa_send_data(8, Drivers.driver3.torque);
-		vofa_send_data(9, TensionSensor[0]);
-		vofa_send_data(10, TensionSensor[1]);
-		vofa_send_data(11, TensionSensor[2]);
+		vofa_send_data(9, SystemOccupancy);
+		//vofa_send_data(9, TensionSensor[0]);
+		//vofa_send_data(10, TensionSensor[1]);
+		//vofa_send_data(11, TensionSensor[2]);
 		vofa_sendframetail();
 		Parameters_Reflash_Flag = 0;
 	}
@@ -320,4 +349,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		//Status_Reflash();
 		Status_Reflash_Flag = 0;
 	}
+	SystemOccupancy = (float) (GetMicros() - OccupancyTimer) / (TimerPeriod * 1000);
+}
+
+long GetMicros(void) {
+	//获取当前毫秒
+	uint32_t m = HAL_GetTick();
+	//获取嘀嗒定时器重装载值
+	const uint32_t tms = SysTick->LOAD + 1;
+	//获取当前滴答定时器计数值
+	__IO uint32_t u = tms - SysTick->VAL;
+	//返还对应的值
+	return (long) (m * 1000 + (u * 1000) / tms);
 }

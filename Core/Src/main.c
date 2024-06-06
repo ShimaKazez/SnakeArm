@@ -142,13 +142,14 @@ int main(void) {
 	vofa_start();
 
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_Start(&hadc2);
 
 	UI_Init();
 
 	int TC_INIT_Flag = 0;
-	int TC_INIT_Flag_1 = 0;
+	//int TC_INIT_Flag_1 = 0;
 	struct angle_speed_torque angle_speed_torque_1 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
@@ -161,10 +162,10 @@ int main(void) {
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		ADC_Read();
-		TensionSensor[0] = (float) ADC_Value2[1];
-		TensionSensor[1] = (float) ADC_Value2[2];
-		TensionSensor[2] = (float) ADC_Value1[7];
-		Home.status[0].num1 = 3.3 * 16 * (float) ADC_Value2[6] / 4096;
+		//TensionSensor[0] = (float) ADC_Value2[1];
+		//TensionSensor[1] = (float) ADC_Value2[2];
+		//TensionSensor[2] = (float) ADC_Value1[7];
+		//Home.status[0].num1 = 3.3 * 16 * (float) ADC_Value2[6] / 4096;
 		//Home.status[1].num1 = (float) NTC_Cov(ADC_Value1[6]);
 		//Home.status[2].num1 = (float) NTC_Cov(ADC_Value2[7]);
 		//Parameters_Reflash_Flag = 1;
@@ -198,49 +199,16 @@ int main(void) {
 			//pid.integral = 0;
 		}
 		if (Program_Flag[1]) {
-			if (!TC_INIT_Flag_1) {
-				/////**************设置零点位置*************////////
-				set_zero_position(1); //给 1 号关节设置零点
-				/////**************开启角度、转速、力矩实时反馈*************////////
-				enable_angle_speed_torque_state(1);
-				set_state_feedback_rate_ms(1, 2);
-				HAL_Delay(200);
-				TC_INIT_Flag_1 = 1;
-			}
-			angle_speed_torque_1 = angle_speed_torque_state(1);
-			Home.params[0].num1 = angle_speed_torque_1.angle;
-			Home.params[1].num1 = angle_speed_torque_1.speed;
-			Home.params[2].num1 = angle_speed_torque_1.torque;
-			Home.params[0].num2 = Mset_Data[0];
-			switch (Mset_Pattern[0]) {
-			case 20:
-				set_torque(1, Mset_Data[0], 1, 0);
-				break;
-			case 16:
-				set_angle(1, Mset_Data[0], 0, 0, 1);
-				break;
-			case 22:
-				set_speed(1, Mset_Data[0], 1000, 1);
-				break;
-			default:
-				estop(0);
-			}
-			Drivers.driver1.angle = angle_speed_torque_1.angle;
-			Drivers.driver1.speed = angle_speed_torque_1.speed;
-			Drivers.driver1.torque = angle_speed_torque_1.torque;
-			Parameters_Reflash_Flag = 1;
+			//FDCAN_Receive();
 			HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
 			HAL_GPIO_WritePin(GPIOC, LED2_Pin, SET);
-			//FDCAN_Receive();
 		} else {
-			estop(1);
+			//estop(1);
 		}
 		if (Program_Flag[2]) {
 			if (!TC_INIT_Flag) {
 				/////**************设置零点位置*************////////
-				set_zero_position(1); //给 1 号关节设置零点
-				set_zero_position(2);
-				set_zero_position(3);
+				set_zero_position(0); //给 1 号关节设置零点
 				/////**************开启角度、转速、力矩实时反馈*************////////
 				enable_angle_speed_torque_state(1);
 				set_state_feedback_rate_ms(1, 2);
