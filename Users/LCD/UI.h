@@ -30,6 +30,7 @@ extern volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflas
 extern volatile int Program_Flag[4];
 extern volatile float TensionSensor[3];
 extern volatile float SystemOccupancy;
+extern volatile int SystemCircleTimesRecord;
 
 struct ELEMENT {
 	volatile char *Label;

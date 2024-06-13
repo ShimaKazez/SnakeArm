@@ -12,6 +12,7 @@ volatile HOME Home;
 volatile DriverS Drivers;
 volatile float TensionSensor[3];
 volatile float SystemOccupancy;
+volatile int SystemCircleTimesRecord;
 int KEY_Flag[4];
 int KEY_FlagOld[4];
 int KEY_Reflash[4];
@@ -181,9 +182,9 @@ void KEY_Scan(void) {
 	/*--------KEY3 CLICK--------*/
 	if (KEY_Reflash[2]) {
 		if (Program_Flag[2]) {
-			Home.flag.Label = "[TC]";
+			Home.flag.Label = "[Motor]";
 			Home.flag.Color = GRED;
-			Home.mode.Label = "Torque";
+			Home.mode.Label = "Connected";
 			Home.mode.Color = WHITE;
 		} else {
 			Home.flag.Label = "[READY]";
@@ -297,44 +298,9 @@ void UI_Init(void) {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	HAL_TIM_Base_Start_IT(&htim17);
+	if (htim == &htim17) {
+		HAL_TIM_Base_Start_IT(&htim17);
 
-	long OccupancyTimer = GetMicros();
-	int TimerPeriod = HAL_GetTick() - TimerLast;
-	TimerLast = HAL_GetTick();
-
-	if (Screen_Seq > 90)
-		Screen_Seq = 0;
-	if (Screen_Seq >= 5)
-		Paint_ClearWindows((Screen_Seq - 10) * 3, 133, (Screen_Seq - 9) * 3, 134, BLACK);
-	if (Screen_Seq <= 80) {
-		if (Screen_Seq >= 0 && Screen_Seq <= 27) {
-			cRed = Screen_Seq * 9 + 10;
-			cGreen = 0;
-			cBlue = (27 - Screen_Seq) * 9 + 10;
-		}
-		if (Screen_Seq > 27 && Screen_Seq <= 54) {
-			cRed = (54 - Screen_Seq) * 9 + 10;
-			cGreen = (Screen_Seq - 28) * 9 + 10;
-			cBlue = 0;
-		}
-		if (Screen_Seq > 54 && Screen_Seq <= 80) {
-			cRed = 0;
-			cGreen = (80 - Screen_Seq) * 9 + 10;
-			cBlue = (Screen_Seq - 55) * 9 + 10;
-		}
-		Paint_ClearWindows(Screen_Seq * 3, 133, (Screen_Seq + 1) * 3, 134, RGB888ToRGB565(cRed, cGreen, cBlue));
-	}
-	Screen_Seq++;
-
-	if (ErrorFlag) {
-		Home.flag.Label = "ERROR";
-		Home.flag.Color = RED;
-	} else {
-		KEY_Scan();
-	}
-	if (Parameters_Reflash_Flag) {
-		Parameters_Reflash();
 		vofa_send_data(0, Drivers.driver1.angle);
 		vofa_send_data(1, Drivers.driver1.speed);
 		vofa_send_data(2, Drivers.driver1.torque);
@@ -344,31 +310,51 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vofa_send_data(6, Drivers.driver3.angle);
 		vofa_send_data(7, Drivers.driver3.speed);
 		vofa_send_data(8, Drivers.driver3.torque);
-		vofa_send_data(9, SystemOccupancy);
-		//vofa_send_data(9, TensionSensor[0]);
-		//vofa_send_data(10, TensionSensor[1]);
-		//vofa_send_data(11, TensionSensor[2]);
+		vofa_send_data(9, TensionSensor[0]);
+		vofa_send_data(10, TensionSensor[1]);
+		vofa_send_data(11, TensionSensor[2]);
+		vofa_send_data(12, SystemOccupancy);
 		vofa_sendframetail();
-		Parameters_Reflash_Flag = 0;
+
 	}
-	if (Targets_Reflash_Flag) {
-		//Targets_Reflash();
-		Targets_Reflash_Flag = 0;
+	if (htim == &htim16) {
+		HAL_TIM_Base_Start_IT(&htim16);
+		if (Screen_Seq > 90)
+			Screen_Seq = 0;
+		if (Screen_Seq >= 5)
+			Paint_ClearWindows((Screen_Seq - 10) * 3, 133, (Screen_Seq - 9) * 3, 134, BLACK);
+		if (Screen_Seq <= 80) {
+			if (Screen_Seq >= 0 && Screen_Seq <= 27) {
+				cRed = Screen_Seq * 9 + 10;
+				cGreen = 0;
+				cBlue = (27 - Screen_Seq) * 9 + 10;
+			}
+			if (Screen_Seq > 27 && Screen_Seq <= 54) {
+				cRed = (54 - Screen_Seq) * 9 + 10;
+				cGreen = (Screen_Seq - 28) * 9 + 10;
+				cBlue = 0;
+			}
+			if (Screen_Seq > 54 && Screen_Seq <= 80) {
+				cRed = 0;
+				cGreen = (80 - Screen_Seq) * 9 + 10;
+				cBlue = (Screen_Seq - 55) * 9 + 10;
+			}
+			Paint_ClearWindows(Screen_Seq * 3, 133, (Screen_Seq + 1) * 3, 134, RGB888ToRGB565(cRed, cGreen, cBlue));
+		}
+		Screen_Seq++;
+
+		if (Parameters_Reflash_Flag) {
+			Parameters_Reflash();
+			Parameters_Reflash_Flag = 0;
+		}
+		if (Targets_Reflash_Flag) {
+			//Targets_Reflash();
+			Targets_Reflash_Flag = 0;
+		}
+		if (Status_Reflash_Flag) {
+			Status_Reflash();
+			Status_Reflash_Flag = 0;
+		}
 	}
-	if (Status_Reflash_Flag) {
-		Status_Reflash();
-		Status_Reflash_Flag = 0;
-	}
-	SystemOccupancy = (float) (GetMicros() - OccupancyTimer) / (TimerPeriod * 1000);
 }
 
-long GetMicros(void) {
-	//获取当前毫秒
-	uint32_t m = HAL_GetTick();
-	//获取嘀嗒定时器重装载值
-	const uint32_t tms = SysTick->LOAD + 1;
-	//获取当前滴答定时器计数值
-	__IO uint32_t u = tms - SysTick->VAL;
-	//返还对应的值
-	return (long) (m * 1000 + (u * 1000) / tms);
-}
