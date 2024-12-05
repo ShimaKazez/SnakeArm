@@ -14,7 +14,6 @@
 #include "main.h"
 #include "GUI_Paint.h"
 #include "dma.h"
-#include "PID.h"
 #include "tim.h"
 
 void UI_Startup(void);
@@ -27,7 +26,7 @@ void UI_Init(void);
 long GetMicros(void);
 
 extern volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
-extern volatile int Program_Flag[4];
+extern volatile int Program_Flag[3];
 extern volatile float TensionSensor[3];
 extern volatile float SystemOccupancy;
 extern volatile int SystemCircleTimesRecord;

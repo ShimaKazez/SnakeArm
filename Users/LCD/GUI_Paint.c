@@ -297,8 +297,7 @@ void Paint_ClearWindows(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWOR
 		}
 	}
 
-	LCD_1IN14_DC_1
-	;
+	LCD_1IN14_DC_1;
 	LCD_1IN14_CS_0;
 	uint8_t Clear_Buffer[(Yend - Ystart + 1) * 2];
 	for (int i = 0; i < (Yend - Ystart + 1); i++) {

@@ -48,16 +48,16 @@
 /**
  * GPIO config
  **/
-#define DEV_RST_PIN     LCD_RES_GPIO_Port -> BSRR = LCD_RES_Pin		//PA15
-#define DEV_DC_PIN      GPIOC -> BSRR = LCD_DC_Pin					//PC11
-#define DEV_CS_PIN		LCD_CS_GPIO_Port -> BSRR = LCD_CS_Pin		//PB6
-#define DEV_BL_PIN		GPIOB -> BSRR = LCD_BLK_Pin 				//PB7
+#define DEV_RST_PIN     LCD_RES_GPIO_Port,LCD_RES_Pin
+#define DEV_DC_PIN      LCD_DC_GPIO_Port,LCD_DC_Pin
+#define DEV_CS_PIN		LCD_CS_GPIO_Port,LCD_CS_Pin
+#define DEV_BL_PIN		LCD_BLK_GPIO_Port,LCD_BLK_Pin
 #define DEV_SPI_PORT	&hspi3
 
 /**
  * GPIO read and write
  **/
-#define DEV_Digital_Write(_pin, _value) _pin << 16*(!_value)
+#define DEV_Digital_Write(_pin, _value) HAL_GPIO_WritePin(_pin,_value)
 //#define DEV_Digital_Read(_pin) HAL_GPIO_ReadPin(_pin)
 
 /**
@@ -74,7 +74,7 @@
  * PWM_BL
  **/
 
-#define DEV_Set_BLK(_Value)	DEV_BL_PIN << 16*(!_Value)
+#define DEV_Set_BLK(_Value)	DEV_Digital_Write(DEV_BL_PIN,_Value)
 
 /*-----------------------------------------------------------------------------*/
 void DEV_SPI_WRite(UBYTE _dat);

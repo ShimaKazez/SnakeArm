@@ -21,7 +21,7 @@ int ErrorFlag;
 int ParamsReflashSteps, TargetReflashSteps, StatusReflashSteps;
 int TimerLast;
 uint8_t cRed, cGreen, cBlue;
-volatile int Program_Flag[4];
+volatile int Program_Flag[3];
 volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
 
 int numlen(double num) {
@@ -61,8 +61,8 @@ void UI_Startup(void) {
 	}
 	Paint_ClearWindows(39, 44, 200, 90, BLACK);
 	Paint_DrawString_EN(43, 49, "Snake Arm", &Font24, BLACK, GBLUE);
-	Paint_DrawString_EN(64, 73, "Ver.202406", &Font16, BLACK, GBLUE);
-	HAL_Delay(1000);
+	Paint_DrawString_EN(64, 73, "Ver.202411", &Font16, BLACK, GBLUE);
+	HAL_Delay(500);
 	Paint_ClearWindows(0, 0, 239, 134, BLACK);
 }
 
@@ -79,16 +79,16 @@ void Parameters_Reflash(void) {
 		Paint_DrawFloatNum(154, 45, Home.status[2].num1, 6 - numlen(Home.status[2].num1), &Font16, BLACK, Home.status[2].Color);
 		break;
 	case 4:
-		Paint_DrawFloatNum(58, 63, Home.params[0].num1, 5 - numlen(Home.params[0].num1), &Font16, BLACK, Home.status[0].Color);
+		Paint_DrawFloatNum(52, 63, Home.params[0].num1, 5 - numlen(Home.params[0].num1), &Font16, BLACK, Home.status[0].Color);
 		break;
 	case 5:
-		Paint_DrawFloatNum(58, 81, Home.params[1].num1, 5 - numlen(Home.params[1].num1), &Font16, BLACK, Home.params[1].Color);
+		Paint_DrawFloatNum(52, 81, Home.params[1].num1, 5 - numlen(Home.params[1].num1), &Font16, BLACK, Home.params[1].Color);
 		break;
 	case 6:
-		Paint_DrawFloatNum(58, 99, Home.params[2].num1, 5 - numlen(Home.params[2].num1), &Font16, BLACK, Home.params[2].Color);
+		Paint_DrawFloatNum(52, 99, Home.params[2].num1, 5 - numlen(Home.params[2].num1), &Font16, BLACK, Home.params[2].Color);
 		break;
 	case 7:
-		Paint_DrawFloatNum(58, 117, Home.params[3].num1, 5 - numlen(Home.params[3].num1), &Font16, BLACK, Home.params[3].Color);
+		Paint_DrawFloatNum(52, 117, Home.params[3].num1, 5 - numlen(Home.params[3].num1), &Font16, BLACK, Home.params[3].Color);
 		break;
 	case 8:
 		Paint_DrawFloatNum(165, 63, Home.params[0].num2, 5 - numlen(Home.params[0].num2), &Font16, BLACK, Home.status[0].Color);
@@ -128,8 +128,8 @@ void KEY_Scan(void) {
 	KEY_FlagOld[3] = KEY_Flag[3];
 	KEY_Flag[0] = !HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin);
 	KEY_Flag[1] = !HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin);
-	KEY_Flag[2] = !HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin);
-	KEY_Flag[3] = !HAL_GPIO_ReadPin(KEY4_GPIO_Port, KEY4_Pin);
+	KEY_Flag[2] = !HAL_GPIO_ReadPin(KEYIN1_GPIO_Port, KEYIN1_Pin);
+	KEY_Flag[3] = !HAL_GPIO_ReadPin(KEYIN2_GPIO_Port, KEYIN2_Pin);
 	KEY_Reflash[0] = KEY_Flag[0] ^ KEY_FlagOld[0];
 	KEY_Reflash[1] = KEY_Flag[1] ^ KEY_FlagOld[1];
 	KEY_Reflash[2] = KEY_Flag[2] ^ KEY_FlagOld[2];
@@ -138,31 +138,27 @@ void KEY_Scan(void) {
 	/*--------KEY1 PUSH--------*/
 	if (KEY_Reflash[0]) {
 		if (KEY_Flag[0]) {
-			Home.flag.Label = "[AUTO]";
+			Home.flag.Label = "[TEST]";
 			Home.flag.Color = BLUE;
-			Home.mode.Label = "ClosedLoop";
+			Home.mode.Label = "Idling";
 			Home.mode.Color = WHITE;
 			Program_Flag[0] = 1;
 			Program_Flag[1] = 0;
 			Program_Flag[2] = 0;
-			Program_Flag[3] = 0;
 		} else {
 			Home.flag.Label = "[READY]";
 			Home.flag.Color = GREEN;
 			Home.mode.Label = "RdToWork";
 			Home.mode.Color = WHITE;
 			Program_Flag[0] = 0;
-			C620_Control.Current3 = 0;
-			//FDCAN_Transmit();
-			Home.params[2].num2 = (float) C620_Control.Current3;
 		}
 		goto Reflash;
 	}
 	/*--------KEY2 CLICK--------*/
 	if (KEY_Reflash[1]) {
 		if (Program_Flag[1]) {
-			Home.flag.Label = "[TC1]";
-			Home.flag.Color = MAGENTA;
+			Home.flag.Label = "[WORK]";
+			Home.flag.Color = YELLOW;
 			Home.mode.Label = "Single";
 			Home.mode.Color = WHITE;
 		} else {
@@ -174,54 +170,29 @@ void KEY_Scan(void) {
 		if (KEY_Flag[1]) {
 			Program_Flag[0] = 0;
 			Program_Flag[2] = 0;
-			Program_Flag[3] = 0;
 			Program_Flag[1] = !Program_Flag[1];
 		}
 		goto Reflash;
 	}
-	/*--------KEY3 CLICK--------*/
+	/*--------KEYIN1 ON--------*/
 	if (KEY_Reflash[2]) {
-		if (Program_Flag[2]) {
-			Home.flag.Label = "[Motor]";
-			Home.flag.Color = GRED;
-			Home.mode.Label = "Connected";
-			Home.mode.Color = WHITE;
-		} else {
-			Home.flag.Label = "[READY]";
-			Home.flag.Color = GREEN;
-			Home.mode.Label = "RdToWork";
-			Home.mode.Color = WHITE;
-		}
 		if (KEY_Flag[2]) {
+			Home.flag.Label = "[TEST]";
+			Home.flag.Color = BLUE;
+			Home.mode.Label = "Idling";
+			Home.mode.Color = WHITE;
 			Program_Flag[0] = 0;
 			Program_Flag[1] = 0;
-			Program_Flag[3] = 0;
-			Program_Flag[2] = !Program_Flag[2];
-		}
-		goto Reflash;
-	}
-	/*--------KEY4 CLICK--------*/
-	if (KEY_Reflash[3]) {
-		if (Program_Flag[3]) {
-			Home.flag.Label = "[UtoC]";
-			Home.flag.Color = YELLOW;
-			Home.mode.Label = "Sending";
-			Home.mode.Color = WHITE;
+			Program_Flag[2] = 1;
 		} else {
 			Home.flag.Label = "[READY]";
 			Home.flag.Color = GREEN;
 			Home.mode.Label = "RdToWork";
 			Home.mode.Color = WHITE;
-		}
-		if (KEY_Flag[3]) {
-			Program_Flag[0] = 0;
-			Program_Flag[1] = 0;
 			Program_Flag[2] = 0;
-			Program_Flag[3] = !Program_Flag[3];
 		}
 		goto Reflash;
 	}
-
 	Reflash: if (KEY_Reflash[0] || KEY_Reflash[1] || KEY_Reflash[2] || KEY_Reflash[3]) {
 		Status_Reflash_Flag = 1;
 	}
@@ -232,34 +203,34 @@ void Homepage_Init(void) {
 	Home.flag.Label = "[READY]";
 	Home.flag.Color = GREEN;
 
-	Home.status[0].Label = "V:";
+	Home.status[0].Label = "A:";
 	Home.status[0].Color = WHITE;
 	Home.status[0].num1 = 0;
 
-	Home.status[1].Label = "C:";
+	Home.status[1].Label = "B:";
 	Home.status[1].Color = WHITE;
 	Home.status[1].num1 = 0;
 
-	Home.status[2].Label = "T:";
+	Home.status[2].Label = "C:";
 	Home.status[2].Color = WHITE;
 	Home.status[2].num1 = 0;
 
 	Home.mode.Label = "Initiating";
 	Home.mode.Color = WHITE;
 
-	Home.params[0].Label = "ANG:";
+	Home.params[0].Label = "MT1:";
 	Home.params[0].Color = WHITE;
 	Home.params[0].num1 = 0;
 
-	Home.params[1].Label = "SPD:";
+	Home.params[1].Label = "MT2:";
 	Home.params[1].Color = WHITE;
 	Home.params[1].num1 = 0;
 
-	Home.params[2].Label = "TOR:";
+	Home.params[2].Label = "MT3:";
 	Home.params[2].Color = WHITE;
 	Home.params[2].num1 = 0;
 
-	Home.params[3].Label = "Tp1:";
+	Home.params[3].Label = "SYS:";
 	Home.params[3].Color = WHITE;
 	Home.params[3].num1 = 0;
 
@@ -271,10 +242,10 @@ void Homepage_Init(void) {
 	Paint_DrawString_EN(5, 81, (char*) Home.params[1].Label, &Font16, BLACK, GBLUE);
 	Paint_DrawString_EN(5, 99, (char*) Home.params[2].Label, &Font16, BLACK, GBLUE);
 	Paint_DrawString_EN(5, 117, (char*) Home.params[3].Label, &Font16, BLACK, GBLUE);
-	Paint_DrawString_EN(132, 63, "->", &Font16, BLACK, GBLUE);
-	Paint_DrawString_EN(132, 81, "->", &Font16, BLACK, GBLUE);
-	Paint_DrawString_EN(132, 99, "->", &Font16, BLACK, GBLUE);
-	Paint_DrawString_EN(132, 117, "->", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(125, 63, "-->", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(125, 81, "-->", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(125, 99, "-->", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(125, 117, "-->", &Font16, BLACK, GBLUE);
 
 	Status_Reflash();
 	Parameters_Reflash();
@@ -313,7 +284,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vofa_send_data(9, TensionSensor[0]);
 		vofa_send_data(10, TensionSensor[1]);
 		vofa_send_data(11, TensionSensor[2]);
-		vofa_send_data(12, SystemOccupancy);
+		vofa_send_data(12, Home.status[0].num2);//Voltage
+		vofa_send_data(13, Home.status[1].num2);//Current
 		vofa_sendframetail();
 
 	}
