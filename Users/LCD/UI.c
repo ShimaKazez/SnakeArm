@@ -23,6 +23,7 @@ int TimerLast;
 uint8_t cRed, cGreen, cBlue;
 volatile int Program_Flag[3];
 volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
+volatile int Motor_Monitor_FLAG;
 
 int numlen(double num) {
 	int len = 1;
@@ -288,6 +289,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vofa_send_data(13, Home.status[1].num2);//Current
 		vofa_sendframetail();
 
+		Motor_Monitor_FLAG = 1;
 	}
 	if (htim == &htim16) {
 		HAL_TIM_Base_Start_IT(&htim16);

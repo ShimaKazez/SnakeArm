@@ -44,7 +44,7 @@ void MX_FDCAN1_Init(void);
 #define SERVO_CAN hfdcan1
 void Can_Config(void);
 uint8_t Can_Send_Msg(uint32_t id,uint8_t len,uint8_t *data);
-void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *SERVO_CAN, uint32_t RxFifo0ITs);
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs);
 
 /* USER CODE END Prototypes */
 

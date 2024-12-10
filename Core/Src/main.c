@@ -146,7 +146,8 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-	Can_Config(); //Can配置信息+
+	Can_Config(); //Can配置信息
+	HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
 	vofa_start();
 
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
@@ -175,8 +176,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1) {
 		SystemCircleTimes++;
-		if ((float)(HAL_GetTick() - SystemClock) > 1000) {
-			SystemOccupancy =1 - ((float)(SystemTimer / 1000) / (float)(HAL_GetTick() - SystemClock));
+		if ((float) (HAL_GetTick() - SystemClock) > 1000) {
+			SystemOccupancy = 1 - ((float) (SystemTimer / 1000) / (float) (HAL_GetTick() - SystemClock));
 			SystemClock = HAL_GetTick();
 			SystemCircleTimesRecord = SystemCircleTimes;
 			SystemCircleTimes = 0;
@@ -198,84 +199,93 @@ int main(void)
 
 		KEY_Scan();
 
-		if (Program_Flag[0]) {
-			Parameters_Reflash_Flag = 1;
-		} else {
-		}
-		if (Program_Flag[1]) {
-			if (!TC_INIT_Flag) {
-				/////**************设置零点位置*************////////
-				set_zero_position(0); //给关节设置零点
-				/////**************开启角度、转速、力矩实时反馈*************////////
-				enable_angle_speed_torque_state(0);
-				set_state_feedback_rate_ms(0, 2);
-				HAL_Delay(200);
-				TC_INIT_Flag = 1;
-				for (int i = 0; i < 3; i++) {
-					Mset_Pattern[i] = 20;
-					Mset_Data[i] = 0;
-				}
+		if (Motor_Monitor_FLAG) {
+			if (Program_Flag[0]) {
+				//set_id(0,3);//强制设置id
+				uint8_t txdata[8]={0x35,0x11,0x03,0x42,0x77,0x0a,0x07,0x08};
+				Can_Send_Msg(1, 8, txdata);
+				//Home.params[3].num1 = get_id(0);
+				Parameters_Reflash_Flag = 1;
+			} else {
 			}
-			angle_speed_torque_1 = angle_speed_torque_state(1);
-			angle_speed_torque_2 = angle_speed_torque_state(2);
-			angle_speed_torque_3 = angle_speed_torque_state(3);
-			float Angle_Data[] = { angle_speed_torque_1.angle, angle_speed_torque_2.angle, angle_speed_torque_3.angle };
-			float Speed_Data[] = { angle_speed_torque_1.speed, angle_speed_torque_2.speed, angle_speed_torque_3.speed };
-			float Torque_Data[] = { angle_speed_torque_1.torque, angle_speed_torque_2.torque, angle_speed_torque_3.torque };
-			for (int i = 0; i < 3; i++) {
-				Home.params[i].num2 = Mset_Data[i];
-				switch (Mset_Pattern[i]) {
-				case 20:
-					if (Mset_Data[i] > 1.2) {
+			if (Program_Flag[1]) {
+				if (!TC_INIT_Flag) {
+					/////**************设置零点位置*************////////
+					set_zero_position(0); //给关节设置零点
+					/////**************开启角度、转速、力矩实时反馈*************////////
+					enable_angle_speed_torque_state(0);
+					set_state_feedback_rate_ms(0, 2);
+					HAL_Delay(200);
+					TC_INIT_Flag = 1;
+					for (int i = 0; i < 3; i++) {
+						Mset_Pattern[i] = 20;
+						Mset_Data[i] = 0;
+					}
+				}
+				angle_speed_torque_1 = angle_speed_torque_state(1);
+				angle_speed_torque_2 = angle_speed_torque_state(2);
+				angle_speed_torque_3 = angle_speed_torque_state(3);
+				float Angle_Data[] = { angle_speed_torque_1.angle, angle_speed_torque_2.angle, angle_speed_torque_3.angle };
+				float Speed_Data[] = { angle_speed_torque_1.speed, angle_speed_torque_2.speed, angle_speed_torque_3.speed };
+				float Torque_Data[] = { angle_speed_torque_1.torque, angle_speed_torque_2.torque, angle_speed_torque_3.torque };
+				for (int i = 0; i < 3; i++) {
+					Home.params[i].num2 = Mset_Data[i];
+					switch (Mset_Pattern[i]) {
+					case 20:
+						if (Mset_Data[i] > 1.2) {
+							estop(0);
+							Home.flag.Label = "T_Err";
+							Home.flag.Color = RED;
+							Status_Reflash_Flag = 1;
+							Program_Flag[2] = 0;
+						}
+						set_torque(i + 1, Mset_Data[i], 1, 0);
+						Home.params[i].num1 = Torque_Data[i];
+						Paint_DrawString_EN(125, (63 + i * 18), "T->", &Font16, BLACK, GBLUE);
+						break;
+					case 16:
+						set_angle(i + 1, Mset_Data[i], 10, 10, 1);
+						Home.params[i].num1 = Angle_Data[i];
+						Paint_DrawString_EN(125, (63 + i * 18), "A->", &Font16, BLACK, GBLUE);
+						break;
+					case 22:
+						set_speed(i + 1, Mset_Data[i], 1000, 1);
+						Home.params[i].num1 = Speed_Data[i];
+						Paint_DrawString_EN(125, (63 + i * 18), "S->", &Font16, BLACK, GBLUE);
+						break;
+					default:
 						estop(0);
-						Home.flag.Label = "T_Err";
+						Home.flag.Label = "LOST";
 						Home.flag.Color = RED;
 						Status_Reflash_Flag = 1;
 						Program_Flag[2] = 0;
 					}
-					set_torque(i + 1, Mset_Data[i], 1, 0);
-					Home.params[i].num1 = Torque_Data[i];
-					Paint_DrawString_EN(125, (63+i*18), "T->", &Font16, BLACK, GBLUE);
-					break;
-				case 16:
-					set_angle(i + 1, Mset_Data[i], 10, 10, 1);
-					Home.params[i].num1 = Angle_Data[i];
-					Paint_DrawString_EN(125, (63+i*18), "A->", &Font16, BLACK, GBLUE);
-					break;
-				case 22:
-					set_speed(i + 1, Mset_Data[i], 1000, 1);
-					Home.params[i].num1 = Speed_Data[i];
-					Paint_DrawString_EN(125, (63+i*18), "S->", &Font16, BLACK, GBLUE);
-					break;
-				default:
+				}
+				Drivers.driver1.angle = angle_speed_torque_1.angle;
+				Drivers.driver1.speed = angle_speed_torque_1.speed;
+				Drivers.driver1.torque = angle_speed_torque_1.torque;
+				Drivers.driver2.angle = angle_speed_torque_2.angle;
+				Drivers.driver2.speed = angle_speed_torque_2.speed;
+				Drivers.driver2.torque = angle_speed_torque_2.torque;
+				Drivers.driver3.angle = angle_speed_torque_3.angle;
+				Drivers.driver3.speed = angle_speed_torque_3.speed;
+				Drivers.driver3.torque = angle_speed_torque_3.torque;
+				Parameters_Reflash_Flag = 1;
+
+				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
+			} else {
+				//HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
+				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
+				if (TC_INIT_Flag) {
 					estop(0);
-					Home.flag.Label = "LOST";
-					Home.flag.Color = RED;
-					Status_Reflash_Flag = 1;
-					Program_Flag[2] = 0;
 				}
 			}
-			Drivers.driver1.angle = angle_speed_torque_1.angle;
-			Drivers.driver1.speed = angle_speed_torque_1.speed;
-			Drivers.driver1.torque = angle_speed_torque_1.torque;
-			Drivers.driver2.angle = angle_speed_torque_2.angle;
-			Drivers.driver2.speed = angle_speed_torque_2.speed;
-			Drivers.driver2.torque = angle_speed_torque_2.torque;
-			Drivers.driver3.angle = angle_speed_torque_3.angle;
-			Drivers.driver3.speed = angle_speed_torque_3.speed;
-			Drivers.driver3.torque = angle_speed_torque_3.torque;
-			Parameters_Reflash_Flag = 1;
-
-			HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
-		} else {
-			//HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
-			HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
-			estop(0);
-		}
-		if (Program_Flag[0] || Program_Flag[1]) {
-			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, SET);
-		} else {
-			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, RESET);
+			if (Program_Flag[0] || Program_Flag[1]) {
+				HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, SET);
+			} else {
+				HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, RESET);
+			}
+			Motor_Monitor_FLAG = 0;
 		}
 
 		SystemTimer += (GetMicros() - SystemTimerLast);
@@ -310,8 +320,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
   RCC_OscInitStruct.PLL.PLLN = 42;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV8;
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {

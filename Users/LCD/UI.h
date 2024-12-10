@@ -30,6 +30,7 @@ extern volatile int Program_Flag[3];
 extern volatile float TensionSensor[3];
 extern volatile float SystemOccupancy;
 extern volatile int SystemCircleTimesRecord;
+extern volatile int Motor_Monitor_FLAG;
 
 struct ELEMENT {
 	volatile char *Label;
