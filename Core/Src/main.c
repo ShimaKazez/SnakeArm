@@ -19,9 +19,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
-#include "dac.h"
 #include "dma.h"
 #include "fdcan.h"
+#include "i2c.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -33,7 +33,6 @@
 #include <stdio.h>
 #include "usbd_cdc_if.h"
 #include "math.h"
-#include "arm_math.h"
 #include "GUI_Paint.h"
 #include "fonts.h"
 #include "image.h"
@@ -41,8 +40,6 @@
 #include "Vofa+.h"
 #include "UI.h"
 #include "ADC_Sample.h"
-#include "NTC.h"
-#include "FOC.h"
 #include "CAN_Com.h"
 #include "DrEmpower_can.h"
 
@@ -55,9 +52,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-extern volatile UART_RX UART_Rx;
-//extern volatile uint32_t UART_RxLength;
-extern volatile float TMset1, TMset2, TMset3, TMset7;
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -68,18 +63,28 @@ extern volatile float TMset1, TMset2, TMset3, TMset7;
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+extern volatile uint8_t Mset_Pattern[3];
+extern volatile float Mset_Data[3];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+long GetMicros(void) {
+	//Ëé∑ÂèñÂΩìÂâçÊØ´Áßí
+	uint32_t m = HAL_GetTick();
+	//Ëé∑ÂèñÂòÄÂóíÂÆöÊó∂Âô®ÈáçË£ÖËΩΩÂÄº
+	const uint32_t tms = SysTick->LOAD + 1;
+	//Ëé∑ÂèñÂΩìÂâçÊª¥Á≠îÂÆöÊó∂Âô®ËÆ°Êï∞ÂÄº
+	__IO uint32_t u = tms - SysTick->VAL;
+	//ËøîËøòÂØπÂ∫îÁöÑÂÄº
+	return (long) (m * 1000 + (u * 1000) / tms);
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-FLASH_OBProgramInitTypeDef OptionsByteStruct;
+//FLASH_OBProgramInitTypeDef OptionsByteStruct;
 /* USER CODE END 0 */
 
 /**
@@ -128,185 +133,172 @@ int main(void) {
 	MX_DMA_Init();
 	MX_ADC1_Init();
 	MX_ADC2_Init();
-	MX_DAC1_Init();
-	MX_TIM2_Init();
 	MX_FDCAN1_Init();
 	MX_SPI1_Init();
 	MX_SPI3_Init();
 	MX_TIM1_Init();
-	MX_TIM3_Init();
 	MX_USART3_UART_Init();
 	MX_USB_Device_Init();
 	MX_TIM17_Init();
+	MX_TIM16_Init();
+	MX_I2C2_Init();
+	MX_TIM3_Init();
 	/* USER CODE BEGIN 2 */
-	Can_Config(); //Can≈‰÷√–≈œ¢+
+	Can_Config(); //CanÈÖçÁΩÆ‰ø°ÊÅØ
+	HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
 	vofa_start();
 
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
 	HAL_ADC_Start(&hadc1);
+	HAL_ADC_Start(&hadc2);
 
 	UI_Init();
 
 	int TC_INIT_Flag = 0;
-	int TC_INIT_Flag_1 = 0;
+	int Main_Program_Flag = 0;
 	struct angle_speed_torque angle_speed_torque_1 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
 
+	//int SystemCircleTimes = 0;
+	//uint8_t SystemClock = 0;
+	//long SystemTimer = 0;
+
 	HAL_TIM_Base_Start_IT(&htim17);
+	HAL_TIM_Base_Start_IT(&htim16);
 
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
+		/*//Á≥ªÁªüÂç†Áî®ÁéáËÆ°ÁÆó
+		 SystemCircleTimes++;
+		 if ((float) (HAL_GetTick() - SystemClock) > 1000) {
+		 SystemOccupancy = 1 - ((float) (SystemTimer / 1000) / (float) (HAL_GetTick() - SystemClock));
+		 SystemClock = HAL_GetTick();
+		 SystemCircleTimesRecord = SystemCircleTimes;
+		 SystemCircleTimes = 0;
+
+		 }
+		 long SystemTimerLast = GetMicros();*/
+
 		ADC_Read();
-		Home.status[0].num1 = 3.3 * 16 * (float) ADC_Value2[4] / 4096;
-		Home.status[1].num1 = (float) NTC_Cov(ADC_Value1[5]);
-		Home.status[2].num1 = (float) NTC_Cov(ADC_Value2[5]);
+		TensionSensor[0] = (float) ADC_Value2[0] / 4096 * 3.3;	//ËØªÂèñ‰º†ÊÑüÂô®‰ø°ÊÅØ
+		TensionSensor[1] = (float) ADC_Value2[1] / 4096 * 3.3;
+		TensionSensor[2] = (float) ADC_Value2[2] / 4096 * 3.3;
+		Home.status[0].num2 = (float) ADC_Value1[0] / 4096 * 26.4;
+		Home.status[1].num2 = (float) ADC_Value1[1] / 4096 * 5;
+		//Home.status[2].num2 = SystemOccupancy * 100;
+		Home.status[0].num1 = TensionSensor[0];
+		Home.status[1].num1 = TensionSensor[1];
+		Home.status[2].num1 = TensionSensor[2];
 		Parameters_Reflash_Flag = 1;
-		/* for DJI C620 with M3508
-		 FDCAN_Receive();
-		 Home.params[0].num1 = (float) C620_Status.Angle * 360 / 8191;
-		 if ((float) C620_Status.Speed <= 32768)
-		 Home.params[1].num1 = (float) C620_Status.Speed;
-		 else
-		 Home.params[1].num1 = 65535 - (float) C620_Status.Speed;
 
-		 if ((float) C620_Status.Current <= 32768)
-		 Home.params[2].num1 = (float) C620_Status.Current;
-		 else
-		 Home.params[2].num1 = 65535 - (float) C620_Status.Current;
-
-		 Home.params[3].num1 = (float) C620_Status.Temp;
-		 */
 		KEY_Scan();
 
-		if (Program_Flag[0]) {
-			Home.params[1].num2 = 600;
-			C620_Control.Current3 = PID_realize(Home.params[1].num2, Home.params[1].num1);
-			Home.params[2].num2 = (float) C620_Control.Current3;
-			Targets_Reflash_Flag = 1;
-			//FDCAN_Transmit();
-			HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
-			HAL_GPIO_WritePin(GPIOC, LED2_Pin, RESET);
-		} else {
-			pid.integral = 0;
-		}
-		if (Program_Flag[1]) {
-			if (!TC_INIT_Flag_1) {
-				/////**************…Ë÷√¡„µ„Œª÷√*************////////
-				set_zero_position(7); //∏¯ 1 ∫≈πÿΩ⁄…Ë÷√¡„µ„
-				/////**************ø™∆ÙΩ«∂»°¢◊™ÀŸ°¢¡¶æÿ µ ±∑¥¿°*************////////
-				enable_angle_speed_torque_state(7);
-				set_state_feedback_rate_ms(7, 2);
-				HAL_Delay(200);
-				TC_INIT_Flag_1 = 1;
+		if (Motor_Monitor_FLAG) {
+			if (Program_Flag[1]) {
+				if (!TC_INIT_Flag) {
+					/////**************ËÆæÁΩÆÈõ∂ÁÇπ‰ΩçÁΩÆ*************////////
+					set_zero_position(0); //ÁªôÂÖ≥ËäÇËÆæÁΩÆÈõ∂ÁÇπ
+					/////**************ÂºÄÂêØËßíÂ∫¶„ÄÅËΩ¨ÈÄü„ÄÅÂäõÁü©ÂÆûÊó∂ÂèçÈ¶à*************////////
+					enable_angle_speed_torque_state(0);
+					set_state_feedback_rate_ms(0, 20);
+					HAL_Delay(200);
+					TC_INIT_Flag = 1;
+					for (int i = 0; i < 3; i++) {
+						Mset_Pattern[i] = 20;					//ÂàùÂßãÂåñ‰∏∫ÂäõÁü©Ê®°Âºè ËÆæÁΩÆÂäõÁü©‰∏∫Èõ∂
+						Mset_Data[i] = 0;
+					}
+				}
+				if (Program_Flag[0]) {					//ËΩØÂΩíÈõ∂ÊéßÂà∂
+					set_zero_position_temp(0);
+					Home.mode.Label = "ZeroSetted";
+					Home.mode.Color = GREEN;
+					Status_Reflash_Flag = 1;
+					for (int i = 0; i < 3; i++) {
+						Mset_Pattern[i] = 16;					//ÂàùÂßãÂåñ‰∏∫‰ΩçÁΩÆÊ®°Âºè ËÆæÁΩÆ‰ΩçÁΩÆ‰∏∫Èõ∂
+						Mset_Data[i] = 0;
+					}
+				}
+
+				angle_speed_torque_1 = angle_speed_torque_state(1);
+				angle_speed_torque_2 = angle_speed_torque_state(2);
+				angle_speed_torque_3 = angle_speed_torque_state(3);
+				float Angle_Data[] = { angle_speed_torque_1.angle, angle_speed_torque_2.angle, angle_speed_torque_3.angle };
+				float Speed_Data[] = { angle_speed_torque_1.speed, angle_speed_torque_2.speed, angle_speed_torque_3.speed };
+				float Torque_Data[] = { angle_speed_torque_1.torque, angle_speed_torque_2.torque, angle_speed_torque_3.torque };
+				for (int i = 0; i < 3; i++) {
+					Home.params[i].num2 = Mset_Data[i];
+					switch (Mset_Pattern[i]) {
+					case 20:
+						if (Mset_Data[i] > 1.2) {
+							estop(0);
+							Home.flag.Label = "ERROR";
+							Home.flag.Color = RED;
+							Home.mode.Label = "OverTorque";					//ÂäõÁü©ËΩØÈôêÂà∂
+							Home.mode.Color = YELLOW;
+							Status_Reflash_Flag = 1;
+							Program_Flag[1] = 0;
+							HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
+						}
+						set_torque(i + 1, Mset_Data[i], 1, 0);
+						Home.params[i].num1 = Torque_Data[i];
+						Paint_DrawString_EN(125, (63 + i * 18), "T->", &Font16, BLACK, GBLUE);
+						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
+						break;
+					case 16:
+						set_angle(i + 1, Mset_Data[i], 10, 10, 1);
+						Home.params[i].num1 = Angle_Data[i];
+						Paint_DrawString_EN(125, (63 + i * 18), "P->", &Font16, BLACK, GBLUE);
+						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
+						break;
+					case 22:
+						set_speed(i + 1, Mset_Data[i], 1000, 1);
+						Home.params[i].num1 = Speed_Data[i];
+						Paint_DrawString_EN(125, (63 + i * 18), "S->", &Font16, BLACK, GBLUE);
+						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
+						break;
+					default:
+						estop(0);
+						Home.flag.Label = "ERROR";
+						Home.flag.Color = RED;
+						Home.mode.Label = "SignalLost";					//‰ø°Âè∑Ê†ºÂºèÈôêÂà∂
+						Home.mode.Color = YELLOW;
+						Status_Reflash_Flag = 1;
+						Program_Flag[1] = 0;
+						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
+					}
+				}
+				Drivers.driver1.angle = angle_speed_torque_1.angle;
+				Drivers.driver1.speed = angle_speed_torque_1.speed;
+				Drivers.driver1.torque = angle_speed_torque_1.torque;
+				Drivers.driver2.angle = angle_speed_torque_2.angle;
+				Drivers.driver2.speed = angle_speed_torque_2.speed;
+				Drivers.driver2.torque = angle_speed_torque_2.torque;
+				Drivers.driver3.angle = angle_speed_torque_3.angle;
+				Drivers.driver3.speed = angle_speed_torque_3.speed;
+				Drivers.driver3.torque = angle_speed_torque_3.torque;
+				Parameters_Reflash_Flag = 1;
+
+			} else {
+				//HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
+				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
+				if (TC_INIT_Flag) {
+					estop(0);
+				}
 			}
-			angle_speed_torque_1 = angle_speed_torque_state(7);
-			Home.params[0].num1 = angle_speed_torque_1.angle;
-			Home.params[1].num1 = angle_speed_torque_1.speed;
-			Home.params[2].num1 = angle_speed_torque_1.torque;
-			Home.params[0].num2 = TMset7;
-			vofa_send_data(0, angle_speed_torque_1.angle);
-			vofa_send_data(1, angle_speed_torque_1.speed);
-			vofa_send_data(2, angle_speed_torque_1.torque);
-			vofa_send_data(3, angle_speed_torque_2.angle);
-			vofa_send_data(4, angle_speed_torque_2.speed);
-			vofa_send_data(5, angle_speed_torque_2.torque);
-			vofa_send_data(6, angle_speed_torque_3.angle);
-			vofa_send_data(7, angle_speed_torque_3.speed);
-			vofa_send_data(8, angle_speed_torque_3.torque);
-			vofa_sendframetail();
-			Parameters_Reflash_Flag = 1;
-			/////**************µ•∏ˆπÿΩ⁄¡¶æÿøÿ÷∆*************////////
-			set_torque(7, TMset7, 1, 0);
 
-			HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
-			HAL_GPIO_WritePin(GPIOC, LED2_Pin, SET);
-			//FDCAN_Receive();
-		} else {
-			estop(1);
-		}
-		if (Program_Flag[2]) {
-			if (!TC_INIT_Flag) {
-				/////**************…Ë÷√¡„µ„Œª÷√*************////////
-				set_zero_position(1); //∏¯ 1 ∫≈πÿΩ⁄…Ë÷√¡„µ„
-				set_zero_position(2);
-				set_zero_position(3);
-				/////**************ø™∆ÙΩ«∂»°¢◊™ÀŸ°¢¡¶æÿ µ ±∑¥¿°*************////////
-				enable_angle_speed_torque_state(1);
-				set_state_feedback_rate_ms(1, 2);
-				HAL_Delay(200);
-				enable_angle_speed_torque_state(2);
-				set_state_feedback_rate_ms(2, 2);
-				HAL_Delay(200);
-				enable_angle_speed_torque_state(3);
-				set_state_feedback_rate_ms(3, 2);
-				HAL_Delay(200);
-				TC_INIT_Flag = 1;
-			}
-			angle_speed_torque_1 = angle_speed_torque_state(1);
-			angle_speed_torque_2 = angle_speed_torque_state(2);
-			angle_speed_torque_3 = angle_speed_torque_state(3);
-			Home.params[0].num1 = angle_speed_torque_1.angle;
-			Home.params[1].num1 = angle_speed_torque_1.speed;
-			Home.params[2].num1 = angle_speed_torque_1.torque;
-			Home.params[0].num2 = TMset1;
-			Home.params[1].num2 = TMset2;
-			Home.params[2].num2 = TMset3;
-			vofa_send_data(0, angle_speed_torque_1.angle);
-			vofa_send_data(1, angle_speed_torque_1.speed);
-			vofa_send_data(2, angle_speed_torque_1.torque);
-			vofa_send_data(3, angle_speed_torque_2.angle);
-			vofa_send_data(4, angle_speed_torque_2.speed);
-			vofa_send_data(5, angle_speed_torque_2.torque);
-			vofa_send_data(6, angle_speed_torque_3.angle);
-			vofa_send_data(7, angle_speed_torque_3.speed);
-			vofa_send_data(8, angle_speed_torque_3.torque);
-			vofa_sendframetail();
-			Parameters_Reflash_Flag = 1;
-			/////**************µ•∏ˆπÿΩ⁄¡¶æÿøÿ÷∆*************////////
-			set_torque(1, TMset1, 1, 0);
-			set_torque(2, TMset2, 1, 0);
-			set_torque(3, TMset3, 1, 0);
+			Motor_Monitor_FLAG = 0;
 
-			HAL_GPIO_WritePin(GPIOC, LED1_Pin, SET);
-			HAL_GPIO_WritePin(GPIOC, LED2_Pin, RESET);
-		} else {
-			estop(1);
-			estop(2);
-			estop(3);
-		}
-		if (Program_Flag[3]) {
-			//C620_Control.Current3 = UART_RxBuffer[1] << 8 | UART_RxBuffer[0];
-			//Home.params[2].num2 = UART_Rx.Rx.RxData1;
-			//FDCAN_Transmit();
-			Targets_Reflash_Flag = 1;
-			HAL_GPIO_WritePin(GPIOC, LED1_Pin, SET);
-			HAL_GPIO_WritePin(GPIOC, LED2_Pin, SET);
-		} else {
-			//Home.params[2].num2 = 0;
-			//C620_Control.Current3 = 0;
-		}
-		if (Program_Flag[0] || Program_Flag[1] || Program_Flag[2] || Program_Flag[3]) {
-			HAL_GPIO_WritePin(GPIOC, LED3_Pin, SET);
-		} else {
-			HAL_GPIO_WritePin(GPIOC, LED3_Pin, RESET);
+			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, Main_Program_Flag);	//‰∏ªÂæ™ÁéØÂ∑•‰ΩúÊ†áËØÜ
+			Main_Program_Flag = !Main_Program_Flag;
 		}
 
-		/*
-		 vofa_send_data(0, Home.status[0].num1);
-		 vofa_send_data(1, Home.status[1].num1);
-		 vofa_send_data(2, Home.status[2].num1);
-		 vofa_send_data(3, Home.params[0].num1);
-		 vofa_send_data(3, Home.params[1].num1);
-		 vofa_send_data(3, Home.params[2].num1);
-		 vofa_send_data(3, Home.params[3].num1);
-		 vofa_sendframetail();
-		 */
+		//SystemTimer += (GetMicros() - SystemTimerLast);
 
-		//FOC_Control();
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
@@ -337,7 +329,7 @@ void SystemClock_Config(void) {
 	RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
 	RCC_OscInitStruct.PLL.PLLN = 42;
 	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-	RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+	RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV8;
 	RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
 	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
 		Error_Handler();

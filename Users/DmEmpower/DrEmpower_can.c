@@ -5,7 +5,6 @@
 库版本号：v2.1
 测试主控版本：STM32f103c8t6
 *************************************************/
-#include "main.h"
 #include "DrEmpower_can.h"
 #include <string.h>
 #include <stdlib.h>
@@ -27,6 +26,7 @@ uint8_t i;
 uint8_t rx_buffer[8];
 uint16_t can_id = 0x00;
 int8_t READ_FLAG = 0;  // 读取结果标志位
+uint8_t set_angles_mode_1_flag = 0; // 标记上一条指令是否为 set_angles mode=1，如果是则为1，不是则为0
 
 int8_t enable_replay_state = 1;  //如需要打开运动控制指令实时状态返回功能，请将该变量改为1，并将下面的MOTOR_NUM设置为总线上的最大关节ID号
 
@@ -39,6 +39,7 @@ void send_command(uint8_t id_num, char cmd, unsigned char *data,uint8_t rt )
 {
     short id_list = (id_num << 5) + cmd;
     Can_Send_Msg(id_list, 8, data);
+    set_angles_mode_1_flag = 0;
 }
 
 void SERVO_DELAY_US(uint8_t tick)
@@ -541,7 +542,7 @@ void set_angles(uint8_t *id_list, float *angle_list, float speed, float param, i
         }
     }
 
-    if (last_count != n || state)
+    if (last_count != n || state || set_angles_mode_1_flag == 0)
     {
         last_count = n;
         SERVO_FREE(last_id_list);
@@ -589,6 +590,7 @@ void set_angles(uint8_t *id_list, float *angle_list, float speed, float param, i
         int type_data[3]= {3,1,1};
         format_data(value_data,type_data,3,"encode");
         send_command(0,0x08,data_list.byte_data,0); // 需要用标准帧（数据帧）进行发送，不能用远程帧
+	set_angles_mode_1_flag = 1;
     }
     else if( mode == 2)
     {
@@ -953,18 +955,35 @@ void set_torques(uint8_t *id_list, float *torque_list, float param, int mode, si
 * @param tff 前馈扭矩（Nm)
 * @param kp 刚度系数(rad/Nm)
 * @param kd 阻尼系数(rad/s/Nm)
+* @param mode 模式选择，等于 1 则以角度为控制目标，等于 0 则以力矩为控制目标
 * @note 阻抗控制为MIT开源方案中的控制模式，其目标输出扭矩计算公式如下：
         torque = kp*( pos – pos_) + t_ff + kd*(vel – vel_)
         其中pos_和vel_分别为输出轴当前实际位置（degree）和当前实际速度（r/min）, kp和kd为刚度系数和阻尼系数，系数比例与MIT等效
 */
-void impedance_control(uint8_t id_num, float pos, float vel, float tff, float kp, float kd)
+void impedance_control(uint8_t id_num, float pos, float vel, float tff, float kp, float kd, int mode)
 {
     float factor = 0.01;
+    float angle_set = 0;
     kp = fabs(kp);
     kd = fabs(kd);
-    if (kp == 0)
-        return;
-    float angle_set = (- kd * vel - tff) / kp + pos;
+    if (kp > 20){
+    	kp = 20; // 限制系数，否则带载时容易震动
+    }
+    if (kd > 20){
+    	kd = 20;
+    }
+    if (mode == 1){
+    	if (kp != 0){
+    		angle_set = (- kd * vel - tff) / kp + pos;
+    	}
+    	else{
+//    		printf("机器人中关节不允许不间断连续旋转 \n");
+    		return;
+    	}
+    }
+    else{
+    	angle_set = pos;
+    }
     preset_angle(id_num,angle_set,vel, tff, 2);
     unsigned char order_num = 0x15;
     float value_data[3]= {order_num,(int)(kp / factor),(int)(kd / factor)};
@@ -983,27 +1002,42 @@ void impedance_control(uint8_t id_num, float pos, float vel, float tff, float kp
 * @param kp_list 角度刚度系数组成的列表（Nm/°），每个元素均需大于 0。
 * @param kd_list 转速阻尼系数组成的列表（Nm/(r/min)），每个元素均需大于 0。
 * @param n 数组长度
-*
+* @param mode 模式选择，等于 1 则以角度为控制目标，等于 0 则以力矩为控制目标
 * @note  该函数直接控制关节输出力矩，其目标输出力矩计算公式如下：
               torque = kp_list[i] * (angle_list[i] – angle_[i]) + tff_list[i] + kd_list[i] * (speed_list[i] – speed_[i])
         其中 angle_[i] 和 speed_[i] 分别为对应关节输出轴当前实际角度（度）和当前实际转速（r/min）, kp_list[i] 和 kd_list[i]
         为刚度系数和阻尼系数。
 */
-void impedance_control_multi(uint8_t id_list[], float angle_list[], float speed_list[], float tff_list[], float kp_list[], float kd_list[], size_t n)
+void impedance_control_multi(uint8_t id_list[], float angle_list[], float speed_list[], float tff_list[], float kp_list[], float kd_list[], int mode, size_t n)
 {
     if (id_list == NULL || angle_list == NULL || speed_list == NULL || tff_list == NULL || kp_list == NULL || kd_list == NULL) return;
     float factor = 0.001;
     float angle_set_list[n];
     for (size_t i = 0; i < n; i++)
     {
-        if (kp_list[i] == 0) return;
-        angle_set_list[i] = (- kd_list[i] * speed_list[i] - tff_list[i]) / kp_list[i] + angle_list[i];
+    	kp_list[i] = fabs(kp_list[i]);
+    	kd_list[i] = fabs(kd_list[i]);
+        if (kp_list[i] > 20){ kp_list[i] = 20;}
+        if (kd_list[i] > 20){ kd_list[i] = 20;}
+        if (mode == 1){
+        	if (kp_list[i] != 0){
+        		angle_set_list[i] = (- kd_list[i] * speed_list[i] - tff_list[i]) / kp_list[i] + angle_list[i];
+        	}
+        	else{
+//        		printf("机器人中关节不允许不间断连续旋转 \n");
+        		return;
+        	}
+        }
+        else{
+        	angle_set_list[i] = angle_list[i];
+        }
         preset_angle(id_list[i],angle_set_list[i],speed_list[i], tff_list[i], 2);
         unsigned char order_num = 0x16;
         float value_data[3]= {order_num,(int)abs(kp_list[i] / factor),(int)abs(kd_list[i] / factor)};
         int type_data[3]= {3,2,2};
         format_data(value_data,type_data,3,"encode");
         send_command(id_list[i], 0x08,data_list.byte_data,0);//需要用标准帧（数据帧）进行发送，不能用远程帧
+        send_command(255,0x06,data_list.byte_data,0);  // 需要用标准帧（数据帧）进行发送，不能用远程帧
         HAL_Delay(1);
     }
 
@@ -1012,6 +1046,7 @@ void impedance_control_multi(uint8_t id_list[], float angle_list[], float speed_
     int type_data_[3]= {3,0,0};
     format_data(value_data_,type_data_,3,"encode");
     send_command(0, 0x08,data_list.byte_data,0);//需要用标准帧（数据帧）进行发送，不能用远程帧
+    send_command(255,0x06,data_list.byte_data,0);  // 需要用标准帧（数据帧）进行发送，不能用远程帧
 }
 /**
 * @brief 单个一体化关节运动跟随与助力函数。
@@ -1158,8 +1193,6 @@ void set_pid(uint8_t id_num, float P, float I, float D)
 }
 /**
  * @brief 急停函数
- * 控制关节紧急停止。关节急停后将切换到IDLE待机模式，关节卸载并生成ERROR_ESTOP_REQUESTED错误标志，不再响应set_angle/speed/torque指令。
- * 如果要恢复正常控制模式，需要首先用clear_error清除错误标志后,然后用set_mode函数将模式设置为2（闭环控制模式）。
  *
  * @param id_num 需要急停的关节ID编号,如果不知道当前关节ID，可以用0广播，如果总线上有多个关节，则多个关节都会执行该操作。
  */

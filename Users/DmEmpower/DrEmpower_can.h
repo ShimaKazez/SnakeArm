@@ -45,8 +45,8 @@ void step_angle(uint8_t id_num, float angle, float speed, float param, int mode)
 void step_angles(uint8_t *id_list, float *angle_list, float speed, float param, int mode, size_t n);
 void set_angle_adaptive(uint8_t id_num, float angle, float speed, float torque);
 void set_angles_adaptive(uint8_t id_list[], float angle_list[], float speed_list[], float torque_list[], size_t n);
-void impedance_control(uint8_t id_num, float pos, float vel, float tff, float kp, float kd);
-void impedance_control_multi(uint8_t id_list[], float angle_list[], float speed_list[], float tff_list[], float kp_list[], float kd_list[], size_t n);
+void impedance_control(uint8_t id_num, float pos, float vel, float tff, float kp, float kd, int mode);
+void impedance_control_multi(uint8_t id_list[], float angle_list[], float speed_list[], float tff_list[], float kp_list[], float kd_list[], int mode, size_t n);
 void motion_aid(uint8_t id_num, float angle, float speed, float angle_err, float speed_err, float torque);
 void motion_aid_multi(uint8_t id_list[], float angle_list[], float speed_list[], float angle_err_list[], float speed_err_list[], float torque_list[], size_t n);
 void position_done(uint8_t id_num);

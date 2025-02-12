@@ -7,14 +7,13 @@
 
 #ifndef LCD_UI_H_
 #define LCD_UI_H_
-#include <COM/CAN_Com.h>
+#include <CAN_Com.h>
 #include <stdio.h>
 #include "string.h"
 #include "stdint.h"
 #include "main.h"
 #include "GUI_Paint.h"
 #include "dma.h"
-#include "PID.h"
 #include "tim.h"
 
 void UI_Startup(void);
@@ -24,9 +23,14 @@ void Targets_Reflash(void);
 void Status_Reflash(void);
 void KEY_Scan(void);
 void UI_Init(void);
+long GetMicros(void);
 
-extern volatile int Parameters_Reflash_Flag,Targets_Reflash_Flag,Status_Reflash_Flag;
-extern volatile int Program_Flag[4];
+extern volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
+extern volatile int Program_Flag[3];
+extern volatile float TensionSensor[3];
+extern volatile float SystemOccupancy;
+extern volatile int SystemCircleTimesRecord;
+extern volatile int Motor_Monitor_FLAG;
 
 struct ELEMENT {
 	volatile char *Label;
@@ -43,5 +47,18 @@ typedef struct {
 	volatile struct ELEMENT params[4];
 } HOME;
 extern volatile HOME Home;
+
+struct DriverStatus {
+	float angle;
+	float speed;
+	float torque;
+};
+
+typedef struct {
+	volatile struct DriverStatus driver1;
+	volatile struct DriverStatus driver2;
+	volatile struct DriverStatus driver3;
+} DriverS;
+extern volatile DriverS Drivers;
 
 #endif /* LCD_UI_H_ */

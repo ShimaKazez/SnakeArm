@@ -38,8 +38,7 @@ static void LCD_1IN14_Reset(void) {
  Reg : Command register
  ******************************************************************************/
 static void LCD_1IN14_SendCommand(UBYTE Reg) {
-	LCD_1IN14_DC_0
-	;
+	LCD_1IN14_DC_0;
 	LCD_1IN14_CS_0;
 	DEV_SPI_WRITE(Reg);
 	//LCD_1IN14_CS_1;
@@ -51,8 +50,7 @@ static void LCD_1IN14_SendCommand(UBYTE Reg) {
  Data : Write data
  ******************************************************************************/
 static void LCD_1IN14_SendData_8Bit(UBYTE Data) {
-	LCD_1IN14_DC_1
-	;
+	LCD_1IN14_DC_1;
 	LCD_1IN14_CS_0;
 	DEV_SPI_WRITE(Data);
 	LCD_1IN14_CS_1;
@@ -64,8 +62,7 @@ static void LCD_1IN14_SendData_8Bit(UBYTE Data) {
  Data : Write data
  ******************************************************************************/
 static void LCD_1IN14_SendData_16Bit(UWORD Data) {
-	LCD_1IN14_DC_1
-	;
+	LCD_1IN14_DC_1;
 	LCD_1IN14_CS_0;
 	DEV_SPI_WRITE((Data >> 8) & 0xFF);
 	DEV_SPI_WRITE(Data & 0xFF);
@@ -184,10 +181,10 @@ void LCD_1IN14_Init(UBYTE Scan_dir) {
 	//Hardware reset
 	LCD_1IN14_Reset();
 //    LCD_1IN14_SendData_8Bit(0x00);
-	DEV_Delay_ms(1000);
-
+	DEV_Delay_ms(200);
 	//Set the resolution and scanning method of the screen
 	LCD_1IN14_SetAttributes(Scan_dir);
+	DEV_Delay_ms(200);
 	//Set the initialization register
 	LCD_1IN14_InitReg();
 

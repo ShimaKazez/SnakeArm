@@ -93,16 +93,17 @@
 extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-typedef union{
+typedef union {
 	volatile uint8_t UART_RxBuffer[8];
-	struct{
+	struct {
 		volatile float RxData1;
 		volatile float RxData2;
-	}Rx;
-}UART_RX;
+	} Rx;
+} UART_RX;
 extern volatile UART_RX UART_Rx;
 extern volatile uint32_t UART_RxLength;
-extern volatile float TMset1,TMset2,TMset3,TMset7;
+extern volatile uint8_t Mset_Pattern[3];
+extern volatile float Mset_Data[3];
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
