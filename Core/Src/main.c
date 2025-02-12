@@ -215,8 +215,8 @@ int main(void) {
 				}
 				if (Program_Flag[0]) {					//软归零控制
 					set_zero_position_temp(0);
-					Home.mode.Label = "Motor => 0";
-					Home.mode.Color = WHITE;
+					Home.mode.Label = "ZeroSetted";
+					Home.mode.Color = GREEN;
 					Status_Reflash_Flag = 1;
 				}
 
@@ -235,7 +235,7 @@ int main(void) {
 							Home.flag.Label = "ERROR";
 							Home.flag.Color = RED;
 							Home.mode.Label = "OverTorque";					//力矩软限制
-							Home.mode.Color = WHITE;
+							Home.mode.Color = YELLOW;
 							Status_Reflash_Flag = 1;
 							Program_Flag[1] = 0;
 							HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
@@ -262,7 +262,7 @@ int main(void) {
 						Home.flag.Label = "ERROR";
 						Home.flag.Color = RED;
 						Home.mode.Label = "SignalLost";					//信号格式限制
-						Home.mode.Color = WHITE;
+						Home.mode.Color = YELLOW;
 						Status_Reflash_Flag = 1;
 						Program_Flag[1] = 0;
 						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);

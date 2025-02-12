@@ -178,9 +178,9 @@ void KEY_Scan(void) {
 	/*--------KEYIN1 ON--------*/
 	if (KEY_Reflash[2]) {
 		if (KEY_Flag[2]) {
-			Home.flag.Label = "[TEST]";
+			Home.flag.Label = "[KEYIN1]";
 			Home.flag.Color = BLUE;
-			Home.mode.Label = "Idling";
+			Home.mode.Label = "Testing";
 			Home.mode.Color = WHITE;
 			Program_Flag[0] = 0;
 			Program_Flag[1] = 0;
