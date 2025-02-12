@@ -11,7 +11,7 @@
 volatile HOME Home;
 volatile DriverS Drivers;
 volatile float TensionSensor[3];
-volatile float SystemOccupancy;
+//volatile float SystemOccupancy;
 volatile int SystemCircleTimesRecord;
 int KEY_Flag[4];
 int KEY_FlagOld[4];
@@ -136,31 +136,31 @@ void KEY_Scan(void) {
 	KEY_Reflash[2] = KEY_Flag[2] ^ KEY_FlagOld[2];
 	KEY_Reflash[3] = KEY_Flag[3] ^ KEY_FlagOld[3];
 
-	/*--------KEY1 PUSH--------*/
+	/*--------KEY1 PUSH--------*/ //自复位按键
 	if (KEY_Reflash[0]) {
-		if (KEY_Flag[0]) {
+		if (KEY_Flag[0]) {/*
 			Home.flag.Label = "[TEST]";
 			Home.flag.Color = BLUE;
-			Home.mode.Label = "Idling";
-			Home.mode.Color = WHITE;
+			Home.mode.Label = "ZPSetting";
+			Home.mode.Color = WHITE;*/
 			Program_Flag[0] = 1;
 			Program_Flag[1] = 0;
 			Program_Flag[2] = 0;
-		} else {
+		} else {/*
 			Home.flag.Label = "[READY]";
 			Home.flag.Color = GREEN;
 			Home.mode.Label = "RdToWork";
-			Home.mode.Color = WHITE;
+			Home.mode.Color = WHITE;*/
 			Program_Flag[0] = 0;
 		}
 		goto Reflash;
 	}
-	/*--------KEY2 CLICK--------*/
+	/*--------KEY2 CLICK--------*/ //自锁按键
 	if (KEY_Reflash[1]) {
 		if (Program_Flag[1]) {
 			Home.flag.Label = "[WORK]";
 			Home.flag.Color = YELLOW;
-			Home.mode.Label = "Single";
+			Home.mode.Label = "Normal";
 			Home.mode.Color = WHITE;
 		} else {
 			Home.flag.Label = "[READY]";
@@ -201,7 +201,7 @@ void KEY_Scan(void) {
 }
 
 void Homepage_Init(void) {
-	Home.flag.Label = "[READY]";
+	Home.flag.Label = "[START]";
 	Home.flag.Color = GREEN;
 
 	Home.status[0].Label = "A:";
@@ -246,7 +246,7 @@ void Homepage_Init(void) {
 	Paint_DrawString_EN(125, 63, "-->", &Font16, BLACK, GBLUE);
 	Paint_DrawString_EN(125, 81, "-->", &Font16, BLACK, GBLUE);
 	Paint_DrawString_EN(125, 99, "-->", &Font16, BLACK, GBLUE);
-	Paint_DrawString_EN(125, 117, "-->", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(125, 117, "---", &Font16, BLACK, GBLUE);
 
 	Status_Reflash();
 	Parameters_Reflash();
@@ -285,8 +285,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vofa_send_data(9, TensionSensor[0]);
 		vofa_send_data(10, TensionSensor[1]);
 		vofa_send_data(11, TensionSensor[2]);
-		vofa_send_data(12, Home.status[0].num2); //Voltage
-		vofa_send_data(13, Home.status[1].num2); //Current
+		//vofa_send_data(12, Home.status[0].num2); //Voltage
+		//vofa_send_data(13, Home.status[1].num2); //Current
 		vofa_sendframetail();
 
 		Motor_Monitor_FLAG = 1;

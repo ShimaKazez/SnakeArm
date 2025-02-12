@@ -161,9 +161,9 @@ int main(void) {
 	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
 
-	int SystemCircleTimes = 0;
-	uint8_t SystemClock = 0;
-	long SystemTimer = 0;
+	//int SystemCircleTimes = 0;
+	//uint8_t SystemClock = 0;
+	//long SystemTimer = 0;
 
 	HAL_TIM_Base_Start_IT(&htim17);
 	HAL_TIM_Base_Start_IT(&htim16);
@@ -173,23 +173,24 @@ int main(void) {
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
-		SystemCircleTimes++;
-		if ((float) (HAL_GetTick() - SystemClock) > 1000) {
-			SystemOccupancy = 1 - ((float) (SystemTimer / 1000) / (float) (HAL_GetTick() - SystemClock));
-			SystemClock = HAL_GetTick();
-			SystemCircleTimesRecord = SystemCircleTimes;
-			SystemCircleTimes = 0;
+		/*//系统占用率计算
+		 SystemCircleTimes++;
+		 if ((float) (HAL_GetTick() - SystemClock) > 1000) {
+		 SystemOccupancy = 1 - ((float) (SystemTimer / 1000) / (float) (HAL_GetTick() - SystemClock));
+		 SystemClock = HAL_GetTick();
+		 SystemCircleTimesRecord = SystemCircleTimes;
+		 SystemCircleTimes = 0;
 
-		}
-		long SystemTimerLast = GetMicros();
+		 }
+		 long SystemTimerLast = GetMicros();*/
 
 		ADC_Read();
-		TensionSensor[0] = (float) ADC_Value2[0] / 4096 * 3.3;
+		TensionSensor[0] = (float) ADC_Value2[0] / 4096 * 3.3;//读取传感器信息
 		TensionSensor[1] = (float) ADC_Value2[1] / 4096 * 3.3;
 		TensionSensor[2] = (float) ADC_Value2[2] / 4096 * 3.3;
 		Home.status[0].num2 = (float) ADC_Value1[0] / 4096 * 26.4;
 		Home.status[1].num2 = (float) ADC_Value1[1] / 4096 * 5;
-		Home.status[2].num2 = SystemOccupancy * 100;
+		//Home.status[2].num2 = SystemOccupancy * 100;
 		Home.status[0].num1 = TensionSensor[0];
 		Home.status[1].num1 = TensionSensor[1];
 		Home.status[2].num1 = TensionSensor[2];
@@ -198,14 +199,6 @@ int main(void) {
 		KEY_Scan();
 
 		if (Motor_Monitor_FLAG) {
-			if (Program_Flag[0]) {
-				//set_id(0,3);//强制设置id
-				uint8_t txdata[8] = { 0x35, 0x11, 0x03, 0x42, 0x77, 0x0a, 0x07, 0x08 };
-				Can_Send_Msg(1, 8, txdata);
-				//Home.params[3].num1 = get_id(0);
-				Parameters_Reflash_Flag = 1;
-			} else {
-			}
 			if (Program_Flag[1]) {
 				if (!TC_INIT_Flag) {
 					/////**************设置零点位置*************////////
@@ -216,10 +209,17 @@ int main(void) {
 					HAL_Delay(200);
 					TC_INIT_Flag = 1;
 					for (int i = 0; i < 3; i++) {
-						Mset_Pattern[i] = 20;
+						Mset_Pattern[i] = 20;//初始化为力矩模式 设置力矩为零
 						Mset_Data[i] = 0;
 					}
 				}
+				if (Program_Flag[0]) {					//软归零控制
+					set_zero_position_temp(0);
+					Home.mode.Label = "Motor => 0";
+					Home.mode.Color = WHITE;
+					Status_Reflash_Flag = 1;
+				}
+
 				angle_speed_torque_1 = angle_speed_torque_state(1);
 				angle_speed_torque_2 = angle_speed_torque_state(2);
 				angle_speed_torque_3 = angle_speed_torque_state(3);
@@ -232,31 +232,40 @@ int main(void) {
 					case 20:
 						if (Mset_Data[i] > 1.2) {
 							estop(0);
-							Home.flag.Label = "T_Err";
+							Home.flag.Label = "ERROR";
 							Home.flag.Color = RED;
+							Home.mode.Label = "OverTorque";//力矩软限制
+							Home.mode.Color = WHITE;
 							Status_Reflash_Flag = 1;
-							Program_Flag[2] = 0;
+							Program_Flag[1] = 0;
+							HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 						}
 						set_torque(i + 1, Mset_Data[i], 1, 0);
 						Home.params[i].num1 = Torque_Data[i];
 						Paint_DrawString_EN(125, (63 + i * 18), "T->", &Font16, BLACK, GBLUE);
+						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					case 16:
 						set_angle(i + 1, Mset_Data[i], 10, 10, 1);
 						Home.params[i].num1 = Angle_Data[i];
 						Paint_DrawString_EN(125, (63 + i * 18), "A->", &Font16, BLACK, GBLUE);
+						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					case 22:
 						set_speed(i + 1, Mset_Data[i], 1000, 1);
 						Home.params[i].num1 = Speed_Data[i];
 						Paint_DrawString_EN(125, (63 + i * 18), "S->", &Font16, BLACK, GBLUE);
+						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					default:
 						estop(0);
-						Home.flag.Label = "LOST";
+						Home.flag.Label = "ERROR";
 						Home.flag.Color = RED;
+						Home.mode.Label = "SignalLost";//信号格式限制
+						Home.mode.Color = WHITE;
 						Status_Reflash_Flag = 1;
-						Program_Flag[2] = 0;
+						Program_Flag[1] = 0;
+						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 					}
 				}
 				Drivers.driver1.angle = angle_speed_torque_1.angle;
@@ -270,15 +279,15 @@ int main(void) {
 				Drivers.driver3.torque = angle_speed_torque_3.torque;
 				Parameters_Reflash_Flag = 1;
 
-				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 			} else {
 				//HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
 				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 				if (TC_INIT_Flag) {
 					estop(0);
+					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 				}
 			}
-			if (Program_Flag[0] || Program_Flag[1]) {
+			if (Program_Flag[0]) {
 				HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, SET);
 			} else {
 				HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, RESET);
@@ -286,7 +295,7 @@ int main(void) {
 			Motor_Monitor_FLAG = 0;
 		}
 
-		SystemTimer += (GetMicros() - SystemTimerLast);
+		//SystemTimer += (GetMicros() - SystemTimerLast);
 
 		/* USER CODE END WHILE */
 
