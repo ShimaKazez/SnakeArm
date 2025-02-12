@@ -7,7 +7,7 @@
 
 #ifndef LCD_UI_H_
 #define LCD_UI_H_
-#include <COM/CAN_Com.h>
+#include <CAN_Com.h>
 #include <stdio.h>
 #include "string.h"
 #include "stdint.h"

@@ -285,8 +285,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vofa_send_data(9, TensionSensor[0]);
 		vofa_send_data(10, TensionSensor[1]);
 		vofa_send_data(11, TensionSensor[2]);
-		vofa_send_data(12, Home.status[0].num2);//Voltage
-		vofa_send_data(13, Home.status[1].num2);//Current
+		vofa_send_data(12, Home.status[0].num2); //Voltage
+		vofa_send_data(13, Home.status[1].num2); //Current
 		vofa_sendframetail();
 
 		Motor_Monitor_FLAG = 1;

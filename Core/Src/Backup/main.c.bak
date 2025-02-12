@@ -33,7 +33,6 @@
 #include <stdio.h>
 #include "usbd_cdc_if.h"
 #include "math.h"
-#include "arm_math.h"
 #include "GUI_Paint.h"
 #include "fonts.h"
 #include "image.h"
@@ -72,13 +71,13 @@ extern volatile float Mset_Data[3];
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 long GetMicros(void) {
-	//��ȡ��ǰ����
+	//锟斤拷取锟斤拷前锟斤拷锟斤拷
 	uint32_t m = HAL_GetTick();
-	//��ȡ��શ�ʱ����װ��ֵ
+	//锟斤拷取锟斤拷嗒讹拷时锟斤拷锟斤拷装锟斤拷值
 	const uint32_t tms = SysTick->LOAD + 1;
-	//��ȡ��ǰ�δ�ʱ������ֵ
+	//锟斤拷取锟斤拷前锟轿达拷时锟斤拷锟斤拷锟斤拷值
 	__IO uint32_t u = tms - SysTick->VAL;
-	//������Ӧ��ֵ
+	//锟斤拷锟斤拷锟斤拷应锟斤拷值
 	return (long) (m * 1000 + (u * 1000) / tms);
 }
 /* USER CODE END PFP */
@@ -146,7 +145,7 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-	Can_Config(); //Can������Ϣ
+	Can_Config(); //Can锟斤拷锟斤拷锟斤拷息
 	HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
 	vofa_start();
 
@@ -201,7 +200,7 @@ int main(void)
 
 		if (Motor_Monitor_FLAG) {
 			if (Program_Flag[0]) {
-				//set_id(0,3);//ǿ������id
+				//set_id(0,3);//强锟斤拷锟斤拷锟斤拷id
 				uint8_t txdata[8]={0x35,0x11,0x03,0x42,0x77,0x0a,0x07,0x08};
 				Can_Send_Msg(1, 8, txdata);
 				//Home.params[3].num1 = get_id(0);
@@ -210,9 +209,9 @@ int main(void)
 			}
 			if (Program_Flag[1]) {
 				if (!TC_INIT_Flag) {
-					/////**************�������λ��*************////////
-					set_zero_position(0); //���ؽ��������
-					/////**************�����Ƕȡ�ת�١�����ʵʱ����*************////////
+					/////**************锟斤拷锟斤拷锟斤拷锟轿伙拷锟�*************////////
+					set_zero_position(0); //锟斤拷锟截斤拷锟斤拷锟斤拷锟斤拷锟�
+					/////**************锟斤拷锟斤拷锟角度★拷转锟劫★拷锟斤拷锟斤拷实时锟斤拷锟斤拷*************////////
 					enable_angle_speed_torque_state(0);
 					set_state_feedback_rate_ms(0, 2);
 					HAL_Delay(200);
