@@ -139,18 +139,18 @@ void KEY_Scan(void) {
 	/*--------KEY1 PUSH--------*/ //自复位按键
 	if (KEY_Reflash[0]) {
 		if (KEY_Flag[0]) {/*
-			Home.flag.Label = "[TEST]";
-			Home.flag.Color = BLUE;
-			Home.mode.Label = "ZPSetting";
-			Home.mode.Color = WHITE;*/
+		 Home.flag.Label = "[TEST]";
+		 Home.flag.Color = BLUE;
+		 Home.mode.Label = "ZPSetting";
+		 Home.mode.Color = WHITE;*/
 			Program_Flag[0] = 1;
 			Program_Flag[1] = 0;
 			Program_Flag[2] = 0;
 		} else {/*
-			Home.flag.Label = "[READY]";
-			Home.flag.Color = GREEN;
-			Home.mode.Label = "RdToWork";
-			Home.mode.Color = WHITE;*/
+		 Home.flag.Label = "[READY]";
+		 Home.flag.Color = GREEN;
+		 Home.mode.Label = "RdToWork";
+		 Home.mode.Color = WHITE;*/
 			Program_Flag[0] = 0;
 		}
 		goto Reflash;
@@ -262,15 +262,15 @@ void UI_Init(void) {
 	Paint_SetDisplayFuntion(LCD_1IN14_DrawPaint);
 	UI_Startup();
 	Homepage_Init();
-	Home.flag.Label = "[READY]";
+	Home.flag.Label = "[START]";
 	Home.flag.Color = GREEN;
-	Home.mode.Label = "RdToWork";
+	Home.mode.Label = "Initiating";
 	Home.mode.Color = WHITE;
 	Status_Reflash();
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if (htim == &htim17) {
+	if (htim == &htim17) { //基准时钟20ms
 		HAL_TIM_Base_Start_IT(&htim17);
 
 		vofa_send_data(0, Drivers.driver1.angle);
@@ -291,8 +291,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 		Motor_Monitor_FLAG = 1;
 	}
-	if (htim == &htim16) {
+	if (htim == &htim16) { //基准时钟100ms
 		HAL_TIM_Base_Start_IT(&htim16);
+
+		//系统运行状态提示进度条
 		if (Screen_Seq > 90)
 			Screen_Seq = 0;
 		if (Screen_Seq >= 5)
