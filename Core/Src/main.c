@@ -205,7 +205,7 @@ int main(void) {
 					set_zero_position(0); //给关节设置零点
 					/////**************开启角度、转速、力矩实时反馈*************////////
 					enable_angle_speed_torque_state(0);
-					set_state_feedback_rate_ms(0, 2);
+					set_state_feedback_rate_ms(0, 20);
 					HAL_Delay(200);
 					TC_INIT_Flag = 1;
 					for (int i = 0; i < 3; i++) {
@@ -218,6 +218,10 @@ int main(void) {
 					Home.mode.Label = "ZeroSetted";
 					Home.mode.Color = GREEN;
 					Status_Reflash_Flag = 1;
+					for (int i = 0; i < 3; i++) {
+						Mset_Pattern[i] = 16;					//初始化为位置模式 设置位置为零
+						Mset_Data[i] = 0;
+					}
 				}
 
 				angle_speed_torque_1 = angle_speed_torque_state(1);
@@ -248,7 +252,7 @@ int main(void) {
 					case 16:
 						set_angle(i + 1, Mset_Data[i], 10, 10, 1);
 						Home.params[i].num1 = Angle_Data[i];
-						Paint_DrawString_EN(125, (63 + i * 18), "A->", &Font16, BLACK, GBLUE);
+						Paint_DrawString_EN(125, (63 + i * 18), "P->", &Font16, BLACK, GBLUE);
 						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					case 22:
