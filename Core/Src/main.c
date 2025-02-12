@@ -258,7 +258,7 @@ int main(void) {
 					case 22:
 						set_speed(i + 1, Mset_Data[i], 1000, 1);
 						Home.params[i].num1 = Speed_Data[i];
-						Paint_DrawString_EN(125, (63 + i * 18), "S->", &Font16, BLACK, GBLUE);
+						Paint_DrawString_EN(125, (63 + i * 18), "V->", &Font16, BLACK, GBLUE);
 						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					default:

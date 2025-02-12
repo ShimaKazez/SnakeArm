@@ -17,7 +17,6 @@ int KEY_Flag[4];
 int KEY_FlagOld[4];
 int KEY_Reflash[4];
 int Screen_Seq;
-int ErrorFlag;
 int ParamsReflashSteps, TargetReflashSteps, StatusReflashSteps;
 int TimerLast;
 uint8_t cRed, cGreen, cBlue;
