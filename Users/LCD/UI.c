@@ -17,7 +17,6 @@ int KEY_Flag[4];
 int KEY_FlagOld[4];
 int KEY_Reflash[4];
 int Screen_Seq;
-int ErrorFlag;
 int ParamsReflashSteps, TargetReflashSteps, StatusReflashSteps;
 int TimerLast;
 uint8_t cRed, cGreen, cBlue;
@@ -144,8 +143,8 @@ void KEY_Scan(void) {
 		 Home.mode.Label = "ZPSetting";
 		 Home.mode.Color = WHITE;*/
 			Program_Flag[0] = 1;
-			Program_Flag[1] = 0;
-			Program_Flag[2] = 0;
+			//Program_Flag[1] = 0;
+			//Program_Flag[2] = 0;
 		} else {/*
 		 Home.flag.Label = "[READY]";
 		 Home.flag.Color = GREEN;

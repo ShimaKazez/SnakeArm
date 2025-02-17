@@ -47,14 +47,14 @@ void MX_FDCAN1_Init(void)
   hfdcan1.Init.AutoRetransmission = DISABLE;
   hfdcan1.Init.TransmitPause = DISABLE;
   hfdcan1.Init.ProtocolException = DISABLE;
-  hfdcan1.Init.NominalPrescaler = 6;
-  hfdcan1.Init.NominalSyncJumpWidth = 7;
-  hfdcan1.Init.NominalTimeSeg1 = 20;
-  hfdcan1.Init.NominalTimeSeg2 = 7;
-  hfdcan1.Init.DataPrescaler = 6;
-  hfdcan1.Init.DataSyncJumpWidth = 7;
-  hfdcan1.Init.DataTimeSeg1 = 20;
-  hfdcan1.Init.DataTimeSeg2 = 7;
+  hfdcan1.Init.NominalPrescaler = 21;
+  hfdcan1.Init.NominalSyncJumpWidth = 15;
+  hfdcan1.Init.NominalTimeSeg1 = 16;
+  hfdcan1.Init.NominalTimeSeg2 = 15;
+  hfdcan1.Init.DataPrescaler = 21;
+  hfdcan1.Init.DataSyncJumpWidth = 15;
+  hfdcan1.Init.DataTimeSeg1 = 16;
+  hfdcan1.Init.DataTimeSeg2 = 15;
   hfdcan1.Init.StdFiltersNbr = 1;
   hfdcan1.Init.ExtFiltersNbr = 0;
   hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
@@ -82,7 +82,7 @@ void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef* fdcanHandle)
   /** Initializes the peripherals clocks
   */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_FDCAN;
-    PeriphClkInit.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL;
+    PeriphClkInit.FdcanClockSelection = RCC_FDCANCLKSOURCE_PCLK1;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
       Error_Handler();
@@ -144,8 +144,8 @@ void Can_Config(void) {
 	FDCAN_FilterType.FilterIndex = 0;
 	FDCAN_FilterType.FilterType = FDCAN_FILTER_MASK;
 	FDCAN_FilterType.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-	FDCAN_FilterType.FilterID1 = 0x0000;
-	FDCAN_FilterType.FilterID2 = 0x0000;
+	FDCAN_FilterType.FilterID1 = 0x111;
+	FDCAN_FilterType.FilterID2 = 0x000;
 	if (HAL_FDCAN_ConfigFilter(&SERVO_CAN, &FDCAN_FilterType) != HAL_OK) {
 		Error_Handler();
 	}
@@ -181,6 +181,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 		can_id = hFDCAN1_RxHeader.Identifier;
 		READ_FLAG = 1;
 	}
+	HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
 }
 
 /* USER CODE END 1 */
