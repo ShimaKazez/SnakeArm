@@ -143,8 +143,8 @@ void KEY_Scan(void) {
 		 Home.mode.Label = "ZPSetting";
 		 Home.mode.Color = WHITE;*/
 			Program_Flag[0] = 1;
-			Program_Flag[1] = 0;
-			Program_Flag[2] = 0;
+			//Program_Flag[1] = 0;
+			//Program_Flag[2] = 0;
 		} else {/*
 		 Home.flag.Label = "[READY]";
 		 Home.flag.Color = GREEN;

@@ -146,7 +146,7 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 	Can_Config(); //Can配置信息
-	HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+	//HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
 	vofa_start();
 
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
@@ -157,6 +157,7 @@ int main(void)
 	UI_Init();
 
 	int TC_INIT_Flag = 0;
+	int Main_Program_Flag = 0;
 	struct angle_speed_torque angle_speed_torque_1 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
@@ -185,7 +186,7 @@ int main(void)
 		 long SystemTimerLast = GetMicros();*/
 
 		ADC_Read();
-		TensionSensor[0] = (float) ADC_Value2[0] / 4096 * 3.3;//读取传感器信息
+		TensionSensor[0] = (float) ADC_Value2[0] / 4096 * 3.3;	//读取传感器信息
 		TensionSensor[1] = (float) ADC_Value2[1] / 4096 * 3.3;
 		TensionSensor[2] = (float) ADC_Value2[2] / 4096 * 3.3;
 		Home.status[0].num2 = (float) ADC_Value1[0] / 4096 * 26.4;
@@ -205,19 +206,23 @@ int main(void)
 					set_zero_position(0); //给关节设置零点
 					/////**************开启角度、转速、力矩实时反馈*************////////
 					enable_angle_speed_torque_state(0);
-					set_state_feedback_rate_ms(0, 2);
+					set_state_feedback_rate_ms(0, 20);
 					HAL_Delay(200);
 					TC_INIT_Flag = 1;
 					for (int i = 0; i < 3; i++) {
-						Mset_Pattern[i] = 20;//初始化为力矩模式 设置力矩为零
+						Mset_Pattern[i] = 20;					//初始化为力矩模式 设置力矩为零
 						Mset_Data[i] = 0;
 					}
 				}
 				if (Program_Flag[0]) {					//软归零控制
 					set_zero_position_temp(0);
-					Home.mode.Label = "Motor => 0";
-					Home.mode.Color = WHITE;
+					Home.mode.Label = "ZeroSetted";
+					Home.mode.Color = GREEN;
 					Status_Reflash_Flag = 1;
+					for (int i = 0; i < 3; i++) {
+						Mset_Pattern[i] = 16;					//初始化为位置模式 设置位置为零
+						Mset_Data[i] = 0;
+					}
 				}
 
 				angle_speed_torque_1 = angle_speed_torque_state(1);
@@ -234,8 +239,8 @@ int main(void)
 							estop(0);
 							Home.flag.Label = "ERROR";
 							Home.flag.Color = RED;
-							Home.mode.Label = "OverTorque";//力矩软限制
-							Home.mode.Color = WHITE;
+							Home.mode.Label = "OverTorque";					//力矩软限制
+							Home.mode.Color = YELLOW;
 							Status_Reflash_Flag = 1;
 							Program_Flag[1] = 0;
 							HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
@@ -248,21 +253,21 @@ int main(void)
 					case 16:
 						set_angle(i + 1, Mset_Data[i], 10, 10, 1);
 						Home.params[i].num1 = Angle_Data[i];
-						Paint_DrawString_EN(125, (63 + i * 18), "A->", &Font16, BLACK, GBLUE);
+						Paint_DrawString_EN(125, (63 + i * 18), "P->", &Font16, BLACK, GBLUE);
 						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					case 22:
 						set_speed(i + 1, Mset_Data[i], 1000, 1);
 						Home.params[i].num1 = Speed_Data[i];
-						Paint_DrawString_EN(125, (63 + i * 18), "S->", &Font16, BLACK, GBLUE);
+						Paint_DrawString_EN(125, (63 + i * 18), "V->", &Font16, BLACK, GBLUE);
 						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					default:
 						estop(0);
 						Home.flag.Label = "ERROR";
 						Home.flag.Color = RED;
-						Home.mode.Label = "SignalLost";//信号格式限制
-						Home.mode.Color = WHITE;
+						Home.mode.Label = "SignalLost";					//信号格式限制
+						Home.mode.Color = YELLOW;
 						Status_Reflash_Flag = 1;
 						Program_Flag[1] = 0;
 						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
@@ -280,19 +285,22 @@ int main(void)
 				Parameters_Reflash_Flag = 1;
 
 			} else {
-				//HAL_GPIO_WritePin(GPIOC, LED1_Pin, RESET);
 				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 				if (TC_INIT_Flag) {
 					estop(0);
-					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 				}
 			}
-			if (Program_Flag[1]) {
-				HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, SET);
+			/*
+			if (Program_Flag[0]) {					//LED控制
+				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 			} else {
-				HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, RESET);
-			}
+				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
+			}*/
+
 			Motor_Monitor_FLAG = 0;
+
+			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, Main_Program_Flag);	//主循环工作标识
+			Main_Program_Flag = !Main_Program_Flag;
 		}
 
 		//SystemTimer += (GetMicros() - SystemTimerLast);
