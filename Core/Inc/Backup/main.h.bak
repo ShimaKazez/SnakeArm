@@ -57,8 +57,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define TimerPeriod17 5
 #define TimerPeriod16 100
-#define TimerPeriod17 20
 #define KEY1_Pin GPIO_PIN_13
 #define KEY1_GPIO_Port GPIOC
 #define KEY2_Pin GPIO_PIN_14
