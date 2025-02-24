@@ -181,10 +181,10 @@ void LCD_1IN14_Init(UBYTE Scan_dir) {
 	//Hardware reset
 	LCD_1IN14_Reset();
 //    LCD_1IN14_SendData_8Bit(0x00);
-	DEV_Delay_ms(200);
+	DEV_Delay_ms(2000);
 	//Set the resolution and scanning method of the screen
 	LCD_1IN14_SetAttributes(Scan_dir);
-	DEV_Delay_ms(200);
+	DEV_Delay_ms(100);
 	//Set the initialization register
 	LCD_1IN14_InitReg();
 

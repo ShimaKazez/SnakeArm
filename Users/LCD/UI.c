@@ -61,7 +61,7 @@ void UI_Startup(void) {
 	}
 	Paint_ClearWindows(39, 44, 200, 90, BLACK);
 	Paint_DrawString_EN(43, 49, "Snake Arm", &Font24, BLACK, GBLUE);
-	Paint_DrawString_EN(64, 73, "Ver.202411", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(64, 73, "Ver.202502", &Font16, BLACK, GBLUE);
 	HAL_Delay(500);
 	Paint_ClearWindows(0, 0, 239, 134, BLACK);
 }
@@ -253,9 +253,11 @@ void Homepage_Init(void) {
 }
 
 void UI_Init(void) {
-	DEV_Module_Init();
-	LCD_1IN14_SetBackLight(SET);
-	LCD_1IN14_Init(HORIZONTAL);
+	DEV_Module_Init();//IO
+	LCD_1IN14_SetBackLight(SET);//IO
+	DEV_Delay_ms(100);
+	LCD_1IN14_Init(HORIZONTAL);//Data
+	DEV_Delay_ms(100);
 	Paint_NewImage(LCD_1IN14.WIDTH, LCD_1IN14.HEIGHT, ROTATE_180, WHITE);
 	Paint_SetClearFuntion(LCD_1IN14_Clear);
 	Paint_SetDisplayFuntion(LCD_1IN14_DrawPaint);
@@ -272,6 +274,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim17) { //基准时钟20ms
 		HAL_TIM_Base_Start_IT(&htim17);
 
+		ADC_Read();
 		vofa_send_data(0, Drivers.driver1.angle);
 		vofa_send_data(1, Drivers.driver1.speed);
 		vofa_send_data(2, Drivers.driver1.torque);

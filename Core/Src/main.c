@@ -39,7 +39,6 @@
 #include "LCD_1in14.h"
 #include "Vofa+.h"
 #include "UI.h"
-#include "ADC_Sample.h"
 #include "CAN_Com.h"
 #include "DrEmpower_can.h"
 
@@ -185,7 +184,7 @@ int main(void)
 		 }
 		 long SystemTimerLast = GetMicros();*/
 
-		ADC_Read();
+
 		TensionSensor[0] = (float) ADC_Value2[0] / 4096 * 3.3;	//读取传感器信息
 		TensionSensor[1] = (float) ADC_Value2[1] / 4096 * 3.3;
 		TensionSensor[2] = (float) ADC_Value2[2] / 4096 * 3.3;

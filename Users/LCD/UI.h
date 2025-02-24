@@ -15,6 +15,7 @@
 #include "GUI_Paint.h"
 #include "dma.h"
 #include "tim.h"
+#include "ADC_Sample.h"
 
 void UI_Startup(void);
 void Homepage_Init(void);
