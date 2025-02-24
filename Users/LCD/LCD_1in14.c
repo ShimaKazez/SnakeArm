@@ -25,11 +25,11 @@ LCD_1IN14_ATTRIBUTES LCD_1IN14;
  ******************************************************************************/
 static void LCD_1IN14_Reset(void) {
 	LCD_1IN14_RST_1;
-	DEV_Delay_ms(100);
+	DEV_Delay_ms(500);
 	LCD_1IN14_RST_0;
-	DEV_Delay_ms(100);
+	DEV_Delay_ms(500);
 	LCD_1IN14_RST_1;
-	DEV_Delay_ms(150);
+	DEV_Delay_ms(500);
 }
 
 /******************************************************************************
@@ -181,7 +181,7 @@ void LCD_1IN14_Init(UBYTE Scan_dir) {
 	//Hardware reset
 	LCD_1IN14_Reset();
 //    LCD_1IN14_SendData_8Bit(0x00);
-	DEV_Delay_ms(2000);
+	DEV_Delay_ms(100);
 	//Set the resolution and scanning method of the screen
 	LCD_1IN14_SetAttributes(Scan_dir);
 	DEV_Delay_ms(100);

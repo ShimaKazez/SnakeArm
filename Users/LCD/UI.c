@@ -35,7 +35,7 @@ int numlen(double num) {
 void UI_Startup(void) {
 	float X, Y, R;
 	Paint_ClearWindows(0, 0, 239, 134, BLACK);
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 100; i+=2) {
 		X = 120;
 		Y = 135 - (10000 - ((100 - i) * (100 - i))) * 67 / 10000;
 		R = 5;
@@ -44,7 +44,7 @@ void UI_Startup(void) {
 		Paint_DrawCircle(X, Y, R, BLACK, 1, 0);
 	}
 	HAL_Delay(200);
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < 12; i+=2) {
 		X = 119;
 		Y = 67;
 		R = i * i + 5;
@@ -57,7 +57,7 @@ void UI_Startup(void) {
 		Y = rand() % 134;
 		R = rand() % 50;
 		Paint_DrawCircle(X, Y, R, RGB888ToRGB565(rand() % 255, rand() % 255, rand() % 255), 1, 0);
-		HAL_Delay(20);
+		HAL_Delay(5);
 	}
 	Paint_ClearWindows(39, 44, 200, 90, BLACK);
 	Paint_DrawString_EN(43, 49, "Snake Arm", &Font24, BLACK, GBLUE);
