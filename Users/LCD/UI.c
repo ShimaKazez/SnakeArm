@@ -35,7 +35,7 @@ int numlen(double num) {
 void UI_Startup(void) {
 	float X, Y, R;
 	Paint_ClearWindows(0, 0, 239, 134, BLACK);
-	for (int i = 0; i < 100; i+=2) {
+	for (int i = 0; i < 100; i += 2) {
 		X = 120;
 		Y = 135 - (10000 - ((100 - i) * (100 - i))) * 67 / 10000;
 		R = 5;
@@ -44,7 +44,7 @@ void UI_Startup(void) {
 		Paint_DrawCircle(X, Y, R, BLACK, 1, 0);
 	}
 	HAL_Delay(200);
-	for (int i = 0; i < 12; i+=2) {
+	for (int i = 0; i < 12; i += 2) {
 		X = 119;
 		Y = 67;
 		R = i * i + 5;
@@ -137,21 +137,24 @@ void KEY_Scan(void) {
 
 	/*--------KEY1 PUSH--------*/ //自复位按键
 	if (KEY_Reflash[0]) {
-		if (KEY_Flag[0]) {/*
+		Program_Flag[0] = KEY_Flag[0];
+		/*
+		 if (KEY_Flag[0]) {
 		 Home.flag.Label = "[TEST]";
 		 Home.flag.Color = BLUE;
 		 Home.mode.Label = "ZPSetting";
-		 Home.mode.Color = WHITE;*/
-			Program_Flag[0] = 1;
-			//Program_Flag[1] = 0;
-			//Program_Flag[2] = 0;
-		} else {/*
+		 Home.mode.Color = WHITE;
+		 Program_Flag[0] = 1;
+		 //Program_Flag[1] = 0;
+		 //Program_Flag[2] = 0;
+		 } else {
 		 Home.flag.Label = "[READY]";
 		 Home.flag.Color = GREEN;
 		 Home.mode.Label = "RdToWork";
-		 Home.mode.Color = WHITE;*/
-			Program_Flag[0] = 0;
-		}
+		 Home.mode.Color = WHITE;
+		 Program_Flag[0] = 0;
+		 }
+		 */
 		goto Reflash;
 	}
 	/*--------KEY2 CLICK--------*/ //自锁按键
@@ -253,10 +256,10 @@ void Homepage_Init(void) {
 }
 
 void UI_Init(void) {
-	DEV_Module_Init();//IO
-	LCD_1IN14_SetBackLight(SET);//IO
+	DEV_Module_Init(); //IO
+	LCD_1IN14_SetBackLight(SET); //IO
 	DEV_Delay_ms(100);
-	LCD_1IN14_Init(HORIZONTAL);//Data
+	LCD_1IN14_Init(HORIZONTAL); //Data
 	DEV_Delay_ms(100);
 	Paint_NewImage(LCD_1IN14.WIDTH, LCD_1IN14.HEIGHT, ROTATE_180, WHITE);
 	Paint_SetClearFuntion(LCD_1IN14_Clear);
@@ -271,7 +274,7 @@ void UI_Init(void) {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if (htim == &htim17) { //基准时钟20ms
+	if (htim == &htim17) { //基准时钟5ms
 		HAL_TIM_Base_Start_IT(&htim17);
 
 		ADC_Read();

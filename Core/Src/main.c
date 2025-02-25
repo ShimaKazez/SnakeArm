@@ -87,22 +87,21 @@ long GetMicros(void) {
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void) {
 
-  /* USER CODE BEGIN 1 */
+	/* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 	//nSWBOOT0 Setting
 	/*HAL_FLASH_Unlock();
 	 HAL_FLASH_OB_Unlock();
@@ -119,31 +118,31 @@ int main(void)
 	 HAL_FLASH_OB_Lock();
 	 HAL_FLASH_Lock();*/
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_ADC1_Init();
-  MX_ADC2_Init();
-  MX_FDCAN1_Init();
-  MX_SPI1_Init();
-  MX_SPI3_Init();
-  MX_TIM1_Init();
-  MX_USART3_UART_Init();
-  MX_USB_Device_Init();
-  MX_TIM17_Init();
-  MX_TIM16_Init();
-  MX_I2C2_Init();
-  MX_TIM3_Init();
-  /* USER CODE BEGIN 2 */
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_DMA_Init();
+	MX_ADC1_Init();
+	MX_ADC2_Init();
+	MX_FDCAN1_Init();
+	MX_SPI1_Init();
+	MX_SPI3_Init();
+	MX_TIM1_Init();
+	MX_USART3_UART_Init();
+	MX_USB_Device_Init();
+	MX_TIM17_Init();
+	MX_TIM16_Init();
+	MX_I2C2_Init();
+	MX_TIM3_Init();
+	/* USER CODE BEGIN 2 */
 	Can_Config(); //Can配置信息
 	//HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
 	vofa_start();
@@ -157,6 +156,7 @@ int main(void)
 
 	int TC_INIT_Flag = 0;
 	int Main_Program_Flag = 0;
+	int P0_Long_Press_Counter = 0;
 	struct angle_speed_torque angle_speed_torque_1 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
@@ -168,10 +168,10 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim17);
 	HAL_TIM_Base_Start_IT(&htim16);
 
-  /* USER CODE END 2 */
+	/* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
 	while (1) {
 		/*//系统占用率计算
 		 SystemCircleTimes++;
@@ -183,7 +183,6 @@ int main(void)
 
 		 }
 		 long SystemTimerLast = GetMicros();*/
-
 
 		TensionSensor[0] = (float) ADC_Value2[0] / 4096 * 3.3;	//读取传感器信息
 		TensionSensor[1] = (float) ADC_Value2[1] / 4096 * 3.3;
@@ -199,6 +198,55 @@ int main(void)
 		KEY_Scan();
 
 		if (Motor_Monitor_FLAG) {
+			if (!Program_Flag[1]) {	//主程序未执行下的操作，通常用于测试
+				if (Program_Flag[0]) {
+					Home.flag.Label = "[TEST]";
+					Home.flag.Color = CYAN;
+					switch (P0_Long_Press_Counter) {
+					case 0:
+						Home.mode.Label = "TestPrg1";
+						Home.mode.Color = LIGHTBLUE;
+						Status_Reflash_Flag = 1;
+						break;
+					case 200:
+						Home.mode.Label = "TestPrg2";
+						Home.mode.Color = LIGHTBLUE;
+						Status_Reflash_Flag = 1;
+						break;
+					case 400:
+						Home.mode.Label = "TestPrg3";
+						Home.mode.Color = LIGHTBLUE;
+						Status_Reflash_Flag = 1;
+						break;
+					case 600:
+						Home.mode.Label = "Exit";
+						Home.mode.Color = GREEN;
+						Status_Reflash_Flag = 1;
+					case 800:
+						P0_Long_Press_Counter = 0;
+						break;
+					default:
+					}
+					P0_Long_Press_Counter++;
+				} else {	//解算工作状态
+					if (P0_Long_Press_Counter != 0) {	//测试子程序，仅执行一次
+						if (P0_Long_Press_Counter > 0 && P0_Long_Press_Counter < 200) {
+							//测试程序1
+						} else if (P0_Long_Press_Counter > 200 && P0_Long_Press_Counter < 400) {
+							//测试程序2
+						} else if (P0_Long_Press_Counter > 400 && P0_Long_Press_Counter < 600) {
+							//测试程序3
+						} else {
+
+						}
+						Home.flag.Label = "[READY]";
+						Home.flag.Color = GREEN;
+						Home.mode.Label = "RdToWork";
+						Home.mode.Color = WHITE;
+						P0_Long_Press_Counter = 0;	//清空长按计数器
+					}
+				}
+			}
 			if (Program_Flag[1]) {
 				if (!TC_INIT_Flag) {
 					/////**************设置零点位置*************////////
@@ -213,15 +261,29 @@ int main(void)
 						Mset_Data[i] = 0;
 					}
 				}
-				if (Program_Flag[0]) {					//软归零控制
-					set_zero_position_temp(0);
-					Home.mode.Label = "ZeroSetted";
-					Home.mode.Color = GREEN;
-					Status_Reflash_Flag = 1;
-					for (int i = 0; i < 3; i++) {
-						Mset_Pattern[i] = 16;					//初始化为位置模式 设置位置为零
-						Mset_Data[i] = 0;
+				if (Program_Flag[0]) {
+					if (P0_Long_Press_Counter == 0) {
+						//短按软归零
+						set_zero_position_temp(0);
+						Home.mode.Label = "ZeroSetted";
+						Home.mode.Color = GREEN;
+						Status_Reflash_Flag = 1;
+						for (int i = 0; i < 3; i++) {
+							Mset_Pattern[i] = 16;					//初始化为位置模式 设置位置为零
+							Mset_Data[i] = 0;
+						}
+						P0_Long_Press_Counter++;
+					} else if (P0_Long_Press_Counter > 0 && P0_Long_Press_Counter < 100) {
+						P0_Long_Press_Counter++;
+					} else {
+						//长按子程序
+						//set_zero_position_temp(0);
+						Home.mode.Label = "LongPressed";
+						Home.mode.Color = GREEN;
+						Status_Reflash_Flag = 1;
 					}
+				} else {
+					P0_Long_Press_Counter = 0;					//清空长按计数器
 				}
 
 				angle_speed_torque_1 = angle_speed_torque_state(1);
@@ -290,11 +352,11 @@ int main(void)
 				}
 			}
 			/*
-			if (Program_Flag[0]) {					//LED控制
-				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
-			} else {
-				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
-			}*/
+			 if (Program_Flag[0]) {					//LED控制
+			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
+			 } else {
+			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
+			 }*/
 
 			Motor_Monitor_FLAG = 0;
 
@@ -304,57 +366,53 @@ int main(void)
 
 		//SystemTimer += (GetMicros() - SystemTimerLast);
 
-    /* USER CODE END WHILE */
+		/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+		/* USER CODE BEGIN 3 */
 	}
-  /* USER CODE END 3 */
+	/* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config(void) {
+	RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
 
-  /** Configure the main internal regulator output voltage
-  */
-  HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST);
+	/** Configure the main internal regulator output voltage
+	 */
+	HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST);
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
-  RCC_OscInitStruct.PLL.PLLN = 28;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV8;
-  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	/** Initializes the RCC Oscillators according to the specified parameters
+	 * in the RCC_OscInitTypeDef structure.
+	 */
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_HSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+	RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
+	RCC_OscInitStruct.PLL.PLLN = 28;
+	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+	RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV8;
+	RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+		Error_Handler();
+	}
 
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+	/** Initializes the CPU, AHB and APB buses clocks
+	 */
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK) {
+		Error_Handler();
+	}
 }
 
 /* USER CODE BEGIN 4 */
@@ -362,17 +420,16 @@ void SystemClock_Config(void)
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void) {
+	/* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
 	__disable_irq();
 	while (1) {
 	}
-  /* USER CODE END Error_Handler_Debug */
+	/* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
