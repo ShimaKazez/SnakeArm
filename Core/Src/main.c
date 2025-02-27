@@ -163,7 +163,6 @@ int main(void)
 	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
 
-	//int SystemCircleTimes = 0;
 	//uint8_t SystemClock = 0;
 	//long SystemTimer = 0;
 
@@ -176,6 +175,8 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
+		//系统刷新率计算
+		SystemCircleTimes++;
 		/*//系统占用率计算
 		 SystemCircleTimes++;
 		 if ((float) (HAL_GetTick() - SystemClock) > 1000) {
@@ -256,7 +257,7 @@ int main(void)
 					set_zero_position(0); //给关节设置零点
 					/////**************开启角度、转速、力矩实时反馈*************////////
 					enable_angle_speed_torque_state(0);
-					set_state_feedback_rate_ms(0, 20);
+					set_state_feedback_rate_ms(0, 5);
 					HAL_Delay(200);
 					TC_INIT_Flag = 1;
 					for (int i = 0; i < 3; i++) {

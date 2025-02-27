@@ -12,7 +12,8 @@ volatile HOME Home;
 volatile DriverS Drivers;
 volatile float TensionSensor[3];
 //volatile float SystemOccupancy;
-volatile int SystemCircleTimesRecord;
+volatile int SystemCircleTimes;
+int SystemFrequency;
 int KEY_Flag[4];
 int KEY_FlagOld[4];
 int KEY_Reflash[4];
@@ -290,6 +291,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vofa_send_data(9, TensionSensor[0]);
 		vofa_send_data(10, TensionSensor[1]);
 		vofa_send_data(11, TensionSensor[2]);
+		vofa_send_data(12, (float)SystemFrequency);
 		//vofa_send_data(12, Home.status[0].num2); //Voltage
 		//vofa_send_data(13, Home.status[1].num2); //Current
 		vofa_sendframetail();
@@ -339,6 +341,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 	if (htim == &htim15) { //基准时钟1000ms
 		HAL_TIM_Base_Start_IT(&htim15);
+		SystemFrequency = SystemCircleTimes;
+		SystemCircleTimes = 0;
 
 	}
 }
