@@ -337,5 +337,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			Status_Reflash_Flag = 0;
 		}
 	}
+	if (htim == &htim15) { //基准时钟1000ms
+		HAL_TIM_Base_Start_IT(&htim15);
+
+	}
 }
 
