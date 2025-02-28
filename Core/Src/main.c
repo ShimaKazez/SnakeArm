@@ -276,36 +276,37 @@ int main(void)
 				}
 
 				if (Program_Flag[0]) {
+					P0_Long_Press_Counter++;
 					switch (P0_Long_Press_Counter) {
-					case 0:
+					case 1:
 						Home.flag.Label = "ONBOARD";					//外部信号驱动
 						Home.flag.Color = GREEN;
 						Home.mode.Label = "SetZero";
 						Home.mode.Color = YELLOW;
 						Status_Reflash_Flag = 1;
 						break;
-					case 200:
+					case 201:
 						Home.flag.Label = "OFFBOARD";					//内部自定义驱动
 						Home.flag.Color = YELLOW;
 						Home.mode.Label = "TestPrg1";
 						Home.mode.Color = LIGHTBLUE;
 						Status_Reflash_Flag = 1;
 						break;
-					case 400:
+					case 401:
 						Home.mode.Label = "TestPrg2";
 						Home.mode.Color = LIGHTBLUE;
 						Status_Reflash_Flag = 1;
 						break;
-					case 600:
+					case 601:
 						Home.mode.Label = "Exit";
 						Home.mode.Color = GREEN;
 						Status_Reflash_Flag = 1;
-					case 800:
+						break;
+					case 801:
 						P0_Long_Press_Counter = 0;
 						break;
 					default:
 					}
-					P0_Long_Press_Counter++;
 				} else {
 					if (P0_Long_Press_Counter > 0 && P0_Long_Press_Counter < 200) {
 						set_zero_position_temp(0);

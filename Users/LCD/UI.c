@@ -27,12 +27,22 @@ volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
 volatile int Motor_Monitor_FLAG;
 volatile int Control_Loop_Mode;
 
+int numN(double num) {
+	int offset = 0;
+	if (num < 0) {
+		offset = 1;
+	} else {
+		offset = 0;
+	}
+	return offset;
+}
+
 int numlen(double num) {
 	int len = 1;
 	while ((int) (num /= 10)) {
 		len++;
 	}
-	return len;
+	return len + numN(num);
 }
 
 void UI_Startup(void) {
@@ -162,17 +172,18 @@ void KEY_Scan(void) {
 	}
 	/*--------KEY2 CLICK--------*/ //自锁按键
 	if (KEY_Reflash[1]) {
-		if (Program_Flag[1]) {
-			Home.flag.Label = "[WORK]";
-			Home.flag.Color = YELLOW;
-			Home.mode.Label = "Normal";
-			Home.mode.Color = WHITE;
-		} else {
-			Home.flag.Label = "[READY]";
-			Home.flag.Color = GREEN;
-			Home.mode.Label = "RdToWork";
-			Home.mode.Color = WHITE;
-		}
+		/*
+		 if (Program_Flag[1]) {
+		 Home.flag.Label = "[WORK]";
+		 Home.flag.Color = YELLOW;
+		 Home.mode.Label = "Normal";
+		 Home.mode.Color = WHITE;
+		 } else {
+		 Home.flag.Label = "[READY]";
+		 Home.flag.Color = GREEN;
+		 Home.mode.Label = "RdToWork";
+		 Home.mode.Color = WHITE;
+		 }*/
 		if (KEY_Flag[1]) {
 			Program_Flag[0] = 0;
 			Program_Flag[2] = 0;
@@ -182,21 +193,22 @@ void KEY_Scan(void) {
 	}
 	/*--------KEYIN1 ON--------*/
 	if (KEY_Reflash[2]) {
-		if (KEY_Flag[2]) {
-			Home.flag.Label = "[KEYIN1]";
-			Home.flag.Color = BLUE;
-			Home.mode.Label = "Testing";
-			Home.mode.Color = WHITE;
-			Program_Flag[0] = 0;
-			Program_Flag[1] = 0;
-			Program_Flag[2] = 1;
-		} else {
-			Home.flag.Label = "[READY]";
-			Home.flag.Color = GREEN;
-			Home.mode.Label = "RdToWork";
-			Home.mode.Color = WHITE;
-			Program_Flag[2] = 0;
-		}
+		/*
+		 if (KEY_Flag[2]) {
+		 Home.flag.Label = "[KEYIN1]";
+		 Home.flag.Color = BLUE;
+		 Home.mode.Label = "Testing";
+		 Home.mode.Color = WHITE;
+		 Program_Flag[0] = 0;
+		 Program_Flag[1] = 0;
+		 Program_Flag[2] = 1;
+		 } else {
+		 Home.flag.Label = "[READY]";
+		 Home.flag.Color = GREEN;
+		 Home.mode.Label = "RdToWork";
+		 Home.mode.Color = WHITE;
+		 Program_Flag[2] = 0;
+		 }*/
 		goto Reflash;
 	}
 	Reflash: if (KEY_Reflash[0] || KEY_Reflash[1] || KEY_Reflash[2] || KEY_Reflash[3]) {
@@ -299,7 +311,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vofa_sendframetail();
 
 		Motor_Monitor_FLAG = 1;
-		SystemOvertimeFlag = 1;
 	}
 	if (htim == &htim16) { //屏幕刷新基准时钟100ms
 		HAL_TIM_Base_Start_IT(&htim16);
@@ -425,13 +436,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim6) { //占用率基准时钟1000ms
 		HAL_TIM_Base_Start_IT(&htim6);
 
-		if(SystemOvertimeFlag){
+		if (SystemOvertimeFlag == 2) {
 			Control_Loop_Mode = 999;
 			Error_Code = 999;
 		}
 		SystemFrequency = SystemCircleTimes;
 		SystemCircleTimes = 0;
-
+		SystemOvertimeFlag++;
 	}
 }
 
