@@ -340,6 +340,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		}
 		Screen_Seq++;
 
+		Home.params[3].num1 = (float) SystemFrequency / 1000;
+		Home.params[3].num2 = (float) Control_Loop_Mode;
+
 		if (Parameters_Reflash_Flag) {
 			Parameters_Reflash();
 			Parameters_Reflash_Flag = 0;
@@ -423,6 +426,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				Home.mode.Color = RED;
 				break;
 			}
+			Home.params[3].num2 = (float) Error_Code;
+			Parameters_Reflash();
 			Status_Reflash();
 			while (1)
 				//强制死机
@@ -436,7 +441,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim6) { //占用率基准时钟1000ms
 		HAL_TIM_Base_Start_IT(&htim6);
 
-		if (SystemOvertimeFlag == 2) {
+		if (SystemOvertimeFlag == 5) {
 			Control_Loop_Mode = 999;
 			Error_Code = 999;
 		}
