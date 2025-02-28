@@ -16,6 +16,7 @@
 #include "dma.h"
 #include "tim.h"
 #include "ADC_Sample.h"
+#include "DrEmpower_can.h"
 
 void UI_Startup(void);
 void Homepage_Init(void);
@@ -32,6 +33,8 @@ extern volatile float TensionSensor[3];
 extern volatile float SystemOccupancy;
 extern volatile int SystemCircleTimes;
 extern volatile int Motor_Monitor_FLAG;
+extern volatile int Control_Loop_Mode;
+extern volatile int SystemOvertimeFlag;
 
 struct ELEMENT {
 	volatile char *Label;

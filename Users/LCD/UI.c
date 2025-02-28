@@ -12,7 +12,8 @@ volatile HOME Home;
 volatile DriverS Drivers;
 volatile float TensionSensor[3];
 //volatile float SystemOccupancy;
-volatile int SystemCircleTimes;
+volatile int SystemCircleTimes, Error_Code;
+volatile int SystemOvertimeFlag;
 int SystemFrequency;
 int KEY_Flag[4];
 int KEY_FlagOld[4];
@@ -24,6 +25,7 @@ uint8_t cRed, cGreen, cBlue;
 volatile int Program_Flag[3];
 volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
 volatile int Motor_Monitor_FLAG;
+volatile int Control_Loop_Mode;
 
 int numlen(double num) {
 	int len = 1;
@@ -267,18 +269,17 @@ void UI_Init(void) {
 	Paint_SetDisplayFuntion(LCD_1IN14_DrawPaint);
 	UI_Startup();
 	Homepage_Init();
-	Home.flag.Label = "[START]";
+	Home.flag.Label = "[READY]";
 	Home.flag.Color = GREEN;
-	Home.mode.Label = "Initiating";
+	Home.mode.Label = "Idling";
 	Home.mode.Color = WHITE;
 	Status_Reflash();
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if (htim == &htim17) { //基准时钟5ms
+	if (htim == &htim17) { //回传基准时钟5ms
 		HAL_TIM_Base_Start_IT(&htim17);
 
-		ADC_Read();
 		vofa_send_data(0, Drivers.driver1.angle);
 		vofa_send_data(1, Drivers.driver1.speed);
 		vofa_send_data(2, Drivers.driver1.torque);
@@ -291,14 +292,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vofa_send_data(9, TensionSensor[0]);
 		vofa_send_data(10, TensionSensor[1]);
 		vofa_send_data(11, TensionSensor[2]);
-		vofa_send_data(12, (float)SystemFrequency);
+		vofa_send_data(12, (float) SystemFrequency);
+		vofa_send_data(13, (float) Control_Loop_Mode);
 		//vofa_send_data(12, Home.status[0].num2); //Voltage
 		//vofa_send_data(13, Home.status[1].num2); //Current
 		vofa_sendframetail();
 
 		Motor_Monitor_FLAG = 1;
+		SystemOvertimeFlag = 1;
 	}
-	if (htim == &htim16) { //基准时钟100ms
+	if (htim == &htim16) { //屏幕刷新基准时钟100ms
 		HAL_TIM_Base_Start_IT(&htim16);
 
 		//系统运行状态提示进度条
@@ -339,8 +342,93 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			Status_Reflash_Flag = 0;
 		}
 	}
-	if (htim == &htim15) { //基准时钟1000ms
-		HAL_TIM_Base_Start_IT(&htim15);
+	if (htim == &htim7) { //控制循环基准时钟1ms
+		HAL_TIM_Base_Start_IT(&htim7);
+
+		ADC_Read();
+		TensionSensor[0] = (float) ADC_Value2[0] / 4096 * 3.3;	//读取传感器信息
+		TensionSensor[1] = (float) ADC_Value2[1] / 4096 * 3.3;
+		TensionSensor[2] = (float) ADC_Value2[2] / 4096 * 3.3;
+
+		switch (Control_Loop_Mode) {	//控制循环模式识别
+		case 000:	//空闲
+			break;
+		case 101:	//测试程序1
+			break;
+		case 102:	//测试程序2
+			break;
+		case 103:	//测试程序3
+			break;
+		case 201:	//外部信号控制循环
+			for (int i = 0; i < 3; i++) {
+				switch (Mset_Pattern[i]) {
+				case 20:
+					if (Mset_Data[i] > 1.2) {
+						estop(0);
+						Control_Loop_Mode = 999;
+						Error_Code = 901;
+					}
+					set_torque(i + 1, Mset_Data[i], 1, 0);
+					break;
+				case 16:
+					set_angle(i + 1, Mset_Data[i], 10, 10, 1);
+					break;
+				case 22:
+					set_speed(i + 1, Mset_Data[i], 1000, 1);
+					break;
+				default:
+					estop(0);
+					Control_Loop_Mode = 999;
+					Error_Code = 902;
+				}
+			}
+			break;
+		case 999:
+			Program_Flag[0] = 0;
+			Program_Flag[1] = 0;
+			switch (Error_Code) {
+			case 901:
+				Home.flag.Label = "ERROR";
+				Home.flag.Color = RED;
+				Home.mode.Label = "OverTorque";					//力矩软限制
+				Home.mode.Color = YELLOW;
+				break;
+			case 902:
+				Home.flag.Label = "ERROR";
+				Home.flag.Color = RED;
+				Home.mode.Label = "SignalLost";					//信号格式限制
+				Home.mode.Color = YELLOW;
+				break;
+			case 999:
+				Home.flag.Label = "ERROR";
+				Home.flag.Color = RED;
+				Home.mode.Label = "Timeout";					//系统超时
+				Home.mode.Color = YELLOW;
+				break;
+			default:
+				Home.flag.Label = "ERROR";
+				Home.flag.Color = RED;
+				Home.mode.Label = "Unknown";					//未知错误
+				Home.mode.Color = RED;
+				break;
+			}
+			Status_Reflash();
+			while (1)
+				//强制死机
+				;
+			break;
+		case 202:					//自定义控制循环
+			break;
+		default:
+		}
+	}
+	if (htim == &htim6) { //占用率基准时钟1000ms
+		HAL_TIM_Base_Start_IT(&htim6);
+
+		if(SystemOvertimeFlag){
+			Control_Loop_Mode = 999;
+			Error_Code = 999;
+		}
 		SystemFrequency = SystemCircleTimes;
 		SystemCircleTimes = 0;
 
