@@ -257,6 +257,7 @@ int main(void) {
 			if (Program_Flag[1]) {
 				if (!TC_INIT_Flag) {	//初始化设置 仅执行一次
 					TC_INIT_Flag = 1;
+					Control_Loop_Mode = 888;	//临时屏蔽超时错误
 					/////**************设置零点位置*************////////
 					set_zero_position(0); //给关节设置零点
 					/////**************开启角度、转速、力矩实时反馈*************////////
@@ -272,6 +273,7 @@ int main(void) {
 					Home.mode.Label = "ZeroNone";
 					Home.mode.Color = YELLOW;
 					Status_Reflash_Flag = 1;
+					Control_Loop_Mode = 200;
 				}
 
 				if (Program_Flag[0]) {

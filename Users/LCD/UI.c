@@ -397,10 +397,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				}
 			}
 			break;
+		case 202:					//自定义控制循环
+
+			break;
+		case 203:					//自定义控制循环
+
+			break;
 		case 999:
 			Program_Flag[0] = 0;
 			Program_Flag[1] = 0;
 			switch (Error_Code) {
+			case 900:
+				Home.flag.Label = "ERROR";
+				Home.flag.Color = RED;
+				Home.mode.Label = "Timeout";					//系统超时
+				Home.mode.Color = YELLOW;
+				break;
 			case 901:
 				Home.flag.Label = "ERROR";
 				Home.flag.Color = RED;
@@ -413,10 +425,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				Home.mode.Label = "SignalLost";					//信号格式限制
 				Home.mode.Color = YELLOW;
 				break;
-			case 999:
+			case 903:
 				Home.flag.Label = "ERROR";
 				Home.flag.Color = RED;
-				Home.mode.Label = "Timeout";					//系统超时
+				Home.mode.Label = "ZeroOut";					//系统超时
 				Home.mode.Color = YELLOW;
 				break;
 			default:
@@ -430,10 +442,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			Parameters_Reflash();
 			Status_Reflash();
 			while (1)
-				//强制死机
+				estop(0);
+				//线程阻塞
 				;
-			break;
-		case 202:					//自定义控制循环
 			break;
 		default:
 		}
@@ -441,9 +452,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim6) { //占用率基准时钟1000ms
 		HAL_TIM_Base_Start_IT(&htim6);
 
-		if (SystemOvertimeFlag == 5) {
+		if (SystemOvertimeFlag >= 1 && Control_Loop_Mode != 888) {
 			Control_Loop_Mode = 999;
-			Error_Code = 999;
+			Error_Code = 900;
+		}
+		if (SystemOvertimeFlag >= 5 && Control_Loop_Mode == 888) {
+			Control_Loop_Mode = 999;
+			Error_Code = 903;
 		}
 		SystemFrequency = SystemCircleTimes;
 		SystemCircleTimes = 0;
