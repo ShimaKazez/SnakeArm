@@ -289,11 +289,13 @@ int main(void) {
 					case 201:
 						Home.flag.Label = "OFFBOARD";					//内部自定义驱动
 						Home.flag.Color = YELLOW;
-						Home.mode.Label = "TestPrg2";
+						Home.mode.Label = "Tighten";
 						Home.mode.Color = LIGHTBLUE;
 						Status_Reflash_Flag = 1;
 						break;
 					case 401:
+						Home.flag.Label = "OFFBOARD";					//内部自定义驱动
+						Home.flag.Color = YELLOW;
 						Home.mode.Label = "TestPrg3";
 						Home.mode.Color = LIGHTBLUE;
 						Status_Reflash_Flag = 1;

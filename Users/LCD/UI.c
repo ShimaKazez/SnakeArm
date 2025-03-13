@@ -398,7 +398,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			}
 			break;
 		case 202:					//自定义控制循环
-
+			for (int i = 0; i < 3; i++) {
+				set_torque(i + 1, 0.15, 1, 0);//预紧
+			}
 			break;
 		case 203:					//自定义控制循环
 
