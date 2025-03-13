@@ -61,8 +61,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-extern volatile uint8_t Mset_Pattern[3];
-extern volatile float Mset_Data[3];
+extern volatile uint8_t offboard_command[3];
+extern volatile float offboard_data[3];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -265,8 +265,8 @@ int main(void) {
 					set_state_feedback_rate_ms(0, 5);
 					HAL_Delay(200);
 					for (int i = 0; i < 3; i++) {
-						Mset_Pattern[i] = 20;					//初始化为力矩模式 设置力矩为零
-						Mset_Data[i] = 0;
+						offboard_command[i] = 20;					//初始化为力矩模式 设置力矩为零
+						offboard_data[i] = 0;
 					}
 					Home.flag.Label = "ONBOARD";					//外部信号驱动
 					Home.flag.Color = GREEN;
@@ -318,8 +318,8 @@ int main(void) {
 							Home.mode.Color = GREEN;
 							status_reflash_flag = 1;
 							for (int i = 0; i < 3; i++) {
-								Mset_Pattern[i] = 16;					//初始化为位置模式 设置位置为零
-								Mset_Data[i] = 0;
+								offboard_command[i] = 16;					//初始化为位置模式 设置位置为零
+								offboard_data[i] = 0;
 							}
 							program_mode_code = 201;					//外部信号驱动
 						} else if (PG0_long_press_counter > 200 && PG0_long_press_counter < 400) {
@@ -340,8 +340,8 @@ int main(void) {
 				float Speed_Data[] = { angle_speed_torque_1.speed, angle_speed_torque_2.speed, angle_speed_torque_3.speed };
 				float Torque_Data[] = { angle_speed_torque_1.torque, angle_speed_torque_2.torque, angle_speed_torque_3.torque };
 				for (int i = 0; i < 3; i++) {
-					Home.params[i].num2 = Mset_Data[i];
-					switch (Mset_Pattern[i]) {
+					Home.params[i].num2 = offboard_data[i];
+					switch (offboard_command[i]) {
 					case 20:
 						Home.params[i].num1 = Torque_Data[i];
 						Paint_DrawString_EN(125, (63 + i * 18), "T->", &Font16, BLACK, GBLUE);

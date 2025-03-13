@@ -33,8 +33,8 @@
 /* Private variables ---------------------------------------------------------*/
 volatile UART_RX UART_Rx;
 volatile uint32_t UART_RxLength;
-volatile uint8_t Mset_Pattern[3];
-volatile float Mset_Data[3];
+volatile uint8_t offboard_command[3];
+volatile float offboard_data[3];
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -269,9 +269,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	for (int i = 0; i < *Len; i++) {
 		UART_Rx.UART_RxBuffer[7 - (i % 8)] = *Buf;
 		if (((i + 1) % 8) == 0) {
-			int Mset_ID = ((int) UART_Rx.Rx.RxData2 % 100) - 1;
-			Mset_Pattern[Mset_ID] = ((int) UART_Rx.Rx.RxData2 / 100);
-			Mset_Data[Mset_ID] = UART_Rx.Rx.RxData1;
+			int offboarf_id = ((int) UART_Rx.Rx.RxData2 % 100) - 1;
+			offboard_command[offboarf_id] = ((int) UART_Rx.Rx.RxData2 / 100);
+			offboard_data[offboarf_id] = UART_Rx.Rx.RxData1;
 		}
 		Buf++;
 	}

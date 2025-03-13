@@ -375,20 +375,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			break;
 		case 201:	//外部信号控制循环
 			for (int i = 0; i < 3; i++) {
-				switch (Mset_Pattern[i]) {
+				switch (offboard_command[i]) {
 				case 20:
-					if (Mset_Data[i] > 1.2) {
+					if (offboard_data[i] > 1.2) {
 						estop(0);
 						program_mode_code = 999;
 						error_code = 901;
 					}
-					set_torque(i + 1, Mset_Data[i], 1, 0);
+					set_torque(i + 1, offboard_data[i], 1, 0);
 					break;
 				case 16:
-					set_angle(i + 1, Mset_Data[i], 10, 10, 1);
+					set_angle(i + 1, offboard_data[i], 10, 10, 1);
 					break;
 				case 22:
-					set_speed(i + 1, Mset_Data[i], 1000, 1);
+					set_speed(i + 1, offboard_data[i], 1000, 1);
 					break;
 				default:
 					estop(0);
@@ -430,7 +430,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			case 903:
 				Home.flag.Label = "ERROR";
 				Home.flag.Color = RED;
-				Home.mode.Label = "ZeroOut";					//系统超时
+				Home.mode.Label = "ZeroOut";					//归零超时
 				Home.mode.Color = YELLOW;
 				break;
 			default:
