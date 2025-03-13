@@ -202,28 +202,19 @@ int main(void) {
 			if (!program_group_flag[1]) {	//主程序未执行下的操作，通常用于测试
 				if (program_group_flag[0]) {
 					PG0_long_press_counter++;
-					Home.flag.Label = "[TEST]";
-					Home.flag.Color = CYAN;
+					Status_Set("[TEST]", CYAN, 0, 0);
 					switch (PG0_long_press_counter) {
 					case 1:
-						Home.mode.Label = "Exit";
-						Home.mode.Color = GREEN;
-						status_reflash_flag = 1;
+						Status_Set(0, 0, "Exit", GREEN);
 						break;
 					case 201:
-						Home.mode.Label = "TestPrg1";
-						Home.mode.Color = LIGHTBLUE;
-						status_reflash_flag = 1;
+						Status_Set(0, 0, "TestPrg1", LIGHTBLUE);
 						break;
 					case 401:
-						Home.mode.Label = "TestPrg2";
-						Home.mode.Color = LIGHTBLUE;
-						status_reflash_flag = 1;
+						Status_Set(0, 0, "TestPrg2", LIGHTBLUE);
 						break;
 					case 601:
-						Home.mode.Label = "TestPrg3";
-						Home.mode.Color = LIGHTBLUE;
-						status_reflash_flag = 1;
+						Status_Set(0, 0, "TestPrg3", LIGHTBLUE);
 						break;
 					case 800:
 						PG0_long_press_counter = 0;
@@ -234,11 +225,7 @@ int main(void) {
 					if (PG0_long_press_counter != 0) {	//测试子程序，仅执行一次
 						if (PG0_long_press_counter > 0 && PG0_long_press_counter < 200) {
 							program_mode_code = 000;
-							Home.flag.Label = "[READY]";
-							Home.flag.Color = GREEN;
-							Home.mode.Label = "Idling";
-							Home.mode.Color = WHITE;
-							status_reflash_flag = 1;
+							Status_Set("[READY]", GREEN, "Idling", WHITE);
 							//测试程序1
 						} else if (PG0_long_press_counter > 200 && PG0_long_press_counter < 400) {
 							program_mode_code = 101;
@@ -268,11 +255,7 @@ int main(void) {
 						offboard_command[i] = 20;					//初始化为力矩模式 设置力矩为零
 						offboard_data[i] = 0;
 					}
-					Home.flag.Label = "ONBOARD";					//外部信号驱动
-					Home.flag.Color = GREEN;
-					Home.mode.Label = "ZeroNone";
-					Home.mode.Color = YELLOW;
-					status_reflash_flag = 1;
+					Status_Set("ONBOARD", GREEN, "ZeroNone", YELLOW);					//外部信号驱动
 					program_mode_code = 200;
 				}
 
@@ -280,30 +263,16 @@ int main(void) {
 					PG0_long_press_counter++;
 					switch (PG0_long_press_counter) {
 					case 1:
-						Home.flag.Label = "ONBOARD";					//外部信号驱动
-						Home.flag.Color = GREEN;
-						Home.mode.Label = "SetZero";
-						Home.mode.Color = YELLOW;
-						status_reflash_flag = 1;
+						Status_Set("ONBOARD", GREEN, "SetZero", YELLOW);					//外部信号驱动
 						break;
 					case 201:
-						Home.flag.Label = "OFFBOARD";					//内部自定义驱动
-						Home.flag.Color = YELLOW;
-						Home.mode.Label = "Tighten";
-						Home.mode.Color = LIGHTBLUE;
-						status_reflash_flag = 1;
+						Status_Set("OFFBOARD", YELLOW, "Tighten", LIGHTBLUE);					//内部自定义驱动
 						break;
 					case 401:
-						Home.flag.Label = "OFFBOARD";					//内部自定义驱动
-						Home.flag.Color = YELLOW;
-						Home.mode.Label = "TestPrg3";
-						Home.mode.Color = LIGHTBLUE;
-						status_reflash_flag = 1;
+						Status_Set("OFFBOARD", YELLOW, "TestPrg3", LIGHTBLUE);					//内部自定义驱动
 						break;
 					case 601:
-						Home.mode.Label = "Exit";
-						Home.mode.Color = GREEN;
-						status_reflash_flag = 1;
+						Status_Set(0, 0, "Exit", GREEN);
 						break;
 					case 801:
 						PG0_long_press_counter = 0;
@@ -314,9 +283,7 @@ int main(void) {
 					if (PG0_long_press_counter != 0) {
 						if (PG0_long_press_counter > 0 && PG0_long_press_counter < 200) {
 							set_zero_position_temp(0);
-							Home.mode.Label = "ZeroSetted";
-							Home.mode.Color = GREEN;
-							status_reflash_flag = 1;
+							Status_Set(0, 0, "ZeroSetted", GREEN);
 							for (int i = 0; i < 3; i++) {
 								offboard_command[i] = 16;					//初始化为位置模式 设置位置为零
 								offboard_data[i] = 0;

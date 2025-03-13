@@ -23,6 +23,7 @@ void Homepage_Init(void);
 void Parameters_Reflash(void);
 void Targets_Reflash(void);
 void Status_Reflash(void);
+void Status_Set(char*,uint16_t,char*,uint16_t);
 void KEY_Scan(void);
 void UI_Init(void);
 long GetMicros(void);

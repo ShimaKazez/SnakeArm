@@ -134,6 +134,18 @@ void Status_Reflash(void) {
 	Paint_DrawString_EN((120 - strlen((char*) Home.mode.Label) * 11) / 2 + 2, 40, (char*) Home.mode.Label, &Font16, BLACK, Home.mode.Color);
 }
 
+void Status_Set(char *flag_label, uint16_t flag_color, char *mode_label, uint16_t mode_color) {
+	if (flag_label != 0) {
+		Home.flag.Label = flag_label;
+		Home.flag.Color = flag_color;
+	}
+	if (mode_label != 0) {
+		Home.mode.Label = mode_label;
+		Home.mode.Color = mode_color;
+	}
+	status_reflash_flag = 1;
+}
+
 void KEY_Scan(void) {
 	key_push_flag_last[0] = key_push_flag[0];
 	key_push_flag_last[1] = key_push_flag[1];
