@@ -27,14 +27,14 @@ void KEY_Scan(void);
 void UI_Init(void);
 long GetMicros(void);
 
-extern volatile int Parameters_Reflash_Flag, Targets_Reflash_Flag, Status_Reflash_Flag;
-extern volatile int Program_Flag[3];
-extern volatile float TensionSensor[3];
+extern volatile int parameters_reflash_flag, targets_reflash_flag, status_reflash_flag;
+extern volatile int program_group_flag[3];
+extern volatile float tension_sensor[3];
 extern volatile float SystemOccupancy;
-extern volatile int SystemCircleTimes;
-extern volatile int Motor_Monitor_FLAG;
-extern volatile int Control_Loop_Mode;
-extern volatile int SystemOvertimeFlag;
+extern volatile int system_cycle_counter;
+extern volatile int driver_monitoring_flag;
+extern volatile int program_mode_code;
+extern volatile int system_timeout_flag;
 
 struct ELEMENT {
 	volatile char *Label;

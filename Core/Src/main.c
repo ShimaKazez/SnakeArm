@@ -155,9 +155,9 @@ int main(void) {
 
 	UI_Init();
 
-	int TC_INIT_Flag = 0;
-	int Main_Program_Flag = 0;
-	int P0_Long_Press_Counter = 0;
+	int driver_initialization_flag = 0;
+	int main_loop_flag = 0;
+	int PG0_long_press_counter = 0;
 	struct angle_speed_torque angle_speed_torque_1 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
@@ -176,7 +176,7 @@ int main(void) {
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		//系统刷新率计算
-		SystemCircleTimes++;
+		system_cycle_counter++;
 		/*//系统占用率计算
 		 SystemCircleTimes++;
 		 if ((float) (HAL_GetTick() - SystemClock) > 1000) {
@@ -191,73 +191,73 @@ int main(void) {
 		//Home.status[0].num2 = (float) ADC_Value1[0] / 4096 * 26.4;
 		//Home.status[1].num2 = (float) ADC_Value1[1] / 4096 * 5;
 		//Home.status[2].num2 = SystemOccupancy * 100;
-		Home.status[0].num1 = TensionSensor[0];
-		Home.status[1].num1 = TensionSensor[1];
-		Home.status[2].num1 = TensionSensor[2];
-		Parameters_Reflash_Flag = 1;
+		Home.status[0].num1 = tension_sensor[0];
+		Home.status[1].num1 = tension_sensor[1];
+		Home.status[2].num1 = tension_sensor[2];
+		parameters_reflash_flag = 1;
 
 		KEY_Scan();
 
-		if (Motor_Monitor_FLAG) {		//回传基准时钟驱动
-			if (!Program_Flag[1]) {	//主程序未执行下的操作，通常用于测试
-				if (Program_Flag[0]) {
-					P0_Long_Press_Counter++;
+		if (driver_monitoring_flag) {		//回传基准时钟驱动
+			if (!program_group_flag[1]) {	//主程序未执行下的操作，通常用于测试
+				if (program_group_flag[0]) {
+					PG0_long_press_counter++;
 					Home.flag.Label = "[TEST]";
 					Home.flag.Color = CYAN;
-					switch (P0_Long_Press_Counter) {
+					switch (PG0_long_press_counter) {
 					case 1:
 						Home.mode.Label = "Exit";
 						Home.mode.Color = GREEN;
-						Status_Reflash_Flag = 1;
+						status_reflash_flag = 1;
 						break;
 					case 201:
 						Home.mode.Label = "TestPrg1";
 						Home.mode.Color = LIGHTBLUE;
-						Status_Reflash_Flag = 1;
+						status_reflash_flag = 1;
 						break;
 					case 401:
 						Home.mode.Label = "TestPrg2";
 						Home.mode.Color = LIGHTBLUE;
-						Status_Reflash_Flag = 1;
+						status_reflash_flag = 1;
 						break;
 					case 601:
 						Home.mode.Label = "TestPrg3";
 						Home.mode.Color = LIGHTBLUE;
-						Status_Reflash_Flag = 1;
+						status_reflash_flag = 1;
 						break;
 					case 800:
-						P0_Long_Press_Counter = 0;
+						PG0_long_press_counter = 0;
 						break;
 					default:
 					}
 				} else {	//解算工作状态
-					if (P0_Long_Press_Counter != 0) {	//测试子程序，仅执行一次
-						if (P0_Long_Press_Counter > 0 && P0_Long_Press_Counter < 200) {
-							Control_Loop_Mode = 000;
+					if (PG0_long_press_counter != 0) {	//测试子程序，仅执行一次
+						if (PG0_long_press_counter > 0 && PG0_long_press_counter < 200) {
+							program_mode_code = 000;
 							Home.flag.Label = "[READY]";
 							Home.flag.Color = GREEN;
 							Home.mode.Label = "Idling";
 							Home.mode.Color = WHITE;
-							Status_Reflash_Flag = 1;
+							status_reflash_flag = 1;
 							//测试程序1
-						} else if (P0_Long_Press_Counter > 200 && P0_Long_Press_Counter < 400) {
-							Control_Loop_Mode = 101;
+						} else if (PG0_long_press_counter > 200 && PG0_long_press_counter < 400) {
+							program_mode_code = 101;
 							//测试程序2
-						} else if (P0_Long_Press_Counter > 400 && P0_Long_Press_Counter < 600) {
-							Control_Loop_Mode = 102;
+						} else if (PG0_long_press_counter > 400 && PG0_long_press_counter < 600) {
+							program_mode_code = 102;
 							//测试程序3
-						} else if (P0_Long_Press_Counter > 600 && P0_Long_Press_Counter < 800) {
-							Control_Loop_Mode = 103;
+						} else if (PG0_long_press_counter > 600 && PG0_long_press_counter < 800) {
+							program_mode_code = 103;
 						} else {
 						}
-						P0_Long_Press_Counter = 0;	//清空长按计数器
+						PG0_long_press_counter = 0;	//清空长按计数器
 					}
 				}
 			}
-			if (Program_Flag[1]) {
-				if (!TC_INIT_Flag) {	//初始化设置 仅执行一次
-					TC_INIT_Flag = 1;
-					Control_Loop_Mode = 888;	//临时屏蔽超时错误
+			if (program_group_flag[1]) {
+				if (!driver_initialization_flag) {	//初始化设置 仅执行一次
+					driver_initialization_flag = 1;
+					program_mode_code = 888;	//临时屏蔽超时错误
 					/////**************设置零点位置*************////////
 					set_zero_position(0); //给关节设置零点
 					/////**************开启角度、转速、力矩实时反馈*************////////
@@ -272,64 +272,64 @@ int main(void) {
 					Home.flag.Color = GREEN;
 					Home.mode.Label = "ZeroNone";
 					Home.mode.Color = YELLOW;
-					Status_Reflash_Flag = 1;
-					Control_Loop_Mode = 200;
+					status_reflash_flag = 1;
+					program_mode_code = 200;
 				}
 
-				if (Program_Flag[0]) {
-					P0_Long_Press_Counter++;
-					switch (P0_Long_Press_Counter) {
+				if (program_group_flag[0]) {
+					PG0_long_press_counter++;
+					switch (PG0_long_press_counter) {
 					case 1:
 						Home.flag.Label = "ONBOARD";					//外部信号驱动
 						Home.flag.Color = GREEN;
 						Home.mode.Label = "SetZero";
 						Home.mode.Color = YELLOW;
-						Status_Reflash_Flag = 1;
+						status_reflash_flag = 1;
 						break;
 					case 201:
 						Home.flag.Label = "OFFBOARD";					//内部自定义驱动
 						Home.flag.Color = YELLOW;
 						Home.mode.Label = "Tighten";
 						Home.mode.Color = LIGHTBLUE;
-						Status_Reflash_Flag = 1;
+						status_reflash_flag = 1;
 						break;
 					case 401:
 						Home.flag.Label = "OFFBOARD";					//内部自定义驱动
 						Home.flag.Color = YELLOW;
 						Home.mode.Label = "TestPrg3";
 						Home.mode.Color = LIGHTBLUE;
-						Status_Reflash_Flag = 1;
+						status_reflash_flag = 1;
 						break;
 					case 601:
 						Home.mode.Label = "Exit";
 						Home.mode.Color = GREEN;
-						Status_Reflash_Flag = 1;
+						status_reflash_flag = 1;
 						break;
 					case 801:
-						P0_Long_Press_Counter = 0;
+						PG0_long_press_counter = 0;
 						break;
 					default:
 					}
 				} else {
-					if (P0_Long_Press_Counter != 0) {
-						if (P0_Long_Press_Counter > 0 && P0_Long_Press_Counter < 200) {
+					if (PG0_long_press_counter != 0) {
+						if (PG0_long_press_counter > 0 && PG0_long_press_counter < 200) {
 							set_zero_position_temp(0);
 							Home.mode.Label = "ZeroSetted";
 							Home.mode.Color = GREEN;
-							Status_Reflash_Flag = 1;
+							status_reflash_flag = 1;
 							for (int i = 0; i < 3; i++) {
 								Mset_Pattern[i] = 16;					//初始化为位置模式 设置位置为零
 								Mset_Data[i] = 0;
 							}
-							Control_Loop_Mode = 201;					//外部信号驱动
-						} else if (P0_Long_Press_Counter > 200 && P0_Long_Press_Counter < 400) {
-							Control_Loop_Mode = 202;					//内部程序2
-						} else if (P0_Long_Press_Counter > 400 && P0_Long_Press_Counter < 600) {
-							Control_Loop_Mode = 203;					//内部程序3
+							program_mode_code = 201;					//外部信号驱动
+						} else if (PG0_long_press_counter > 200 && PG0_long_press_counter < 400) {
+							program_mode_code = 202;					//内部程序2
+						} else if (PG0_long_press_counter > 400 && PG0_long_press_counter < 600) {
+							program_mode_code = 203;					//内部程序3
 						} else {
 							//闲置
 						}
-						P0_Long_Press_Counter = 0;					//清空长按计数器
+						PG0_long_press_counter = 0;					//清空长按计数器
 					}
 				}
 
@@ -369,12 +369,12 @@ int main(void) {
 				Drivers.driver3.angle = angle_speed_torque_3.angle;
 				Drivers.driver3.speed = angle_speed_torque_3.speed;
 				Drivers.driver3.torque = angle_speed_torque_3.torque;
-				Parameters_Reflash_Flag = 1;
+				parameters_reflash_flag = 1;
 
 			} else {
-				if (TC_INIT_Flag) {
+				if (driver_initialization_flag) {
 					estop(0);
-					TC_INIT_Flag = 0;
+					driver_initialization_flag = 0;
 					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 				}
 			}
@@ -385,11 +385,11 @@ int main(void) {
 			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 			 }*/
 
-			Motor_Monitor_FLAG = 0;
+			driver_monitoring_flag = 0;
 
-			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, Main_Program_Flag);	//主循环工作标识
-			Main_Program_Flag = !Main_Program_Flag;
-			SystemOvertimeFlag = 0;
+			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, main_loop_flag);	//主循环工作标识
+			main_loop_flag = !main_loop_flag;
+			system_timeout_flag = 0;
 		}
 
 		//SystemTimer += (GetMicros() - SystemTimerLast);

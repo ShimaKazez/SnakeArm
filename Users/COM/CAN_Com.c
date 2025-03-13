@@ -51,8 +51,8 @@ void FDCAN_Transmit(void) {
 	TxHeader.FDFormat = FDCAN_CLASSIC_CAN; // FDCAN_CLASSIC_CAN or FDCAN_FD_CAN
 	//TxHeader.TxEventFifoControl=FDCAN_NO_TX_EVENTS;
 	//TxHeader.MessageMarker=0;
-	//while (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) == 0); // µÈ´ýÓÐ·¢ËÍÓÊÏä¿ÉÓÃ
-	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, Data.TxData); // ·¢ËÍÊý¾ÝÖ¡
+	//while (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) == 0); // ï¿½È´ï¿½ï¿½Ð·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, Data.TxData); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¡
 }
 
 void FDCAN_Receive(void) {
@@ -65,7 +65,7 @@ void FDCAN_Receive(void) {
 			};
 		} Data;
 		if (HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &RxHeader, Data.RxData) == HAL_OK) {
-			if (Program_Flag[1]) {
+			if (program_group_flag[1]) {
 				vofa_send_data(0, swapShort16(Data.C1));
 				vofa_send_data(1, swapShort16(Data.C2));
 				vofa_send_data(2, swapShort16(Data.C3));
@@ -77,7 +77,7 @@ void FDCAN_Receive(void) {
 				Home.params[3].num2 = swapShort16(Data.C4);
 				Targets_Reflash();
 			}
-			if (Program_Flag[0] || Program_Flag[3]) {
+			if (program_group_flag[0] || program_group_flag[3]) {
 				C620_Status.Angle = Data.RxData[0] << 8 | Data.RxData[1];
 				C620_Status.Speed = Data.RxData[2] << 8 | Data.RxData[3];
 				C620_Status.Current = Data.RxData[4] << 8 | Data.RxData[5];
