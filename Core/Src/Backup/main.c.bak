@@ -39,9 +39,8 @@
 #include "LCD_1in14.h"
 #include "Vofa+.h"
 #include "UI.h"
-#include "ADC_Sample.h"
 #include "CAN_Com.h"
-#include "DrEmpower_can.h"
+#include "Servo.h"
 
 /* USER CODE END Includes */
 
@@ -63,8 +62,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-extern volatile uint8_t Mset_Pattern[3];
-extern volatile float Mset_Data[3];
+extern volatile uint8_t offboard_command[3];
+extern volatile float offboard_data[3];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -144,10 +143,13 @@ int main(void)
   MX_TIM16_Init();
   MX_I2C2_Init();
   MX_TIM3_Init();
+  MX_TIM6_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 	Can_Config(); //Can配置信息
 	//HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
 	vofa_start();
+	Servo_Init();
 
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
@@ -156,24 +158,28 @@ int main(void)
 
 	UI_Init();
 
-	int TC_INIT_Flag = 0;
-	int Main_Program_Flag = 0;
+	int driver_initialization_flag = 0;
+	int main_loop_flag = 0;
+	int PG0_long_press_counter = 0;
 	struct angle_speed_torque angle_speed_torque_1 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
 
-	//int SystemCircleTimes = 0;
 	//uint8_t SystemClock = 0;
 	//long SystemTimer = 0;
 
 	HAL_TIM_Base_Start_IT(&htim17);
 	HAL_TIM_Base_Start_IT(&htim16);
+	HAL_TIM_Base_Start_IT(&htim7);
+	HAL_TIM_Base_Start_IT(&htim6);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
+		//系统刷新率计算
+		system_cycle_counter++;
 		/*//系统占用率计算
 		 SystemCircleTimes++;
 		 if ((float) (HAL_GetTick() - SystemClock) > 1000) {
@@ -185,43 +191,115 @@ int main(void)
 		 }
 		 long SystemTimerLast = GetMicros();*/
 
-		ADC_Read();
-		TensionSensor[0] = (float) ADC_Value2[0] / 4096 * 3.3;	//读取传感器信息
-		TensionSensor[1] = (float) ADC_Value2[1] / 4096 * 3.3;
-		TensionSensor[2] = (float) ADC_Value2[2] / 4096 * 3.3;
-		Home.status[0].num2 = (float) ADC_Value1[0] / 4096 * 26.4;
-		Home.status[1].num2 = (float) ADC_Value1[1] / 4096 * 5;
+		//Home.status[0].num2 = (float) ADC_Value1[0] / 4096 * 26.4;
+		//Home.status[1].num2 = (float) ADC_Value1[1] / 4096 * 5;
 		//Home.status[2].num2 = SystemOccupancy * 100;
-		Home.status[0].num1 = TensionSensor[0];
-		Home.status[1].num1 = TensionSensor[1];
-		Home.status[2].num1 = TensionSensor[2];
-		Parameters_Reflash_Flag = 1;
+		Home.status[0].num1 = tension_sensor[0];
+		Home.status[1].num1 = tension_sensor[1];
+		Home.status[2].num1 = tension_sensor[2];
+		parameters_reflash_flag = 1;
 
 		KEY_Scan();
 
-		if (Motor_Monitor_FLAG) {
-			if (Program_Flag[1]) {
-				if (!TC_INIT_Flag) {
+		if (driver_monitoring_flag) {		//回传基准时钟驱动
+			if (!program_group_flag[1]) {	//主程序未执行下的操作，通常用于测试
+				if (program_group_flag[0]) {
+					PG0_long_press_counter++;
+					Status_Set("[TEST]", CYAN, 0, 0);
+					switch (PG0_long_press_counter) {
+					case 1:
+						Status_Set(0, 0, "Exit", GREEN);
+						break;
+					case 201:
+						Status_Set(0, 0, "TestPrg1", LIGHTBLUE);
+						break;
+					case 401:
+						Status_Set(0, 0, "TestPrg2", LIGHTBLUE);
+						break;
+					case 601:
+						Status_Set(0, 0, "TestPrg3", LIGHTBLUE);
+						break;
+					case 800:
+						PG0_long_press_counter = 0;
+						break;
+					default:
+					}
+				} else {	//解算工作状态
+					if (PG0_long_press_counter != 0) {	//测试子程序，仅执行一次
+						if (PG0_long_press_counter > 0 && PG0_long_press_counter < 200) {
+							program_mode_code = 000;
+							Status_Set("[READY]", GREEN, "Idling", WHITE);
+							//测试程序1
+						} else if (PG0_long_press_counter > 200 && PG0_long_press_counter < 400) {
+							program_mode_code = 101;
+							//测试程序2
+						} else if (PG0_long_press_counter > 400 && PG0_long_press_counter < 600) {
+							program_mode_code = 102;
+							//测试程序3
+						} else if (PG0_long_press_counter > 600 && PG0_long_press_counter < 800) {
+							program_mode_code = 103;
+						} else {
+						}
+						PG0_long_press_counter = 0;	//清空长按计数器
+					}
+				}
+			}
+			if (program_group_flag[1]) {
+				if (!driver_initialization_flag) {	//初始化设置 仅执行一次
+					driver_initialization_flag = 1;
+					program_mode_code = 888;	//临时屏蔽超时错误
 					/////**************设置零点位置*************////////
 					set_zero_position(0); //给关节设置零点
 					/////**************开启角度、转速、力矩实时反馈*************////////
 					enable_angle_speed_torque_state(0);
-					set_state_feedback_rate_ms(0, 20);
+					set_state_feedback_rate_ms(0, 5);
 					HAL_Delay(200);
-					TC_INIT_Flag = 1;
 					for (int i = 0; i < 3; i++) {
-						Mset_Pattern[i] = 20;					//初始化为力矩模式 设置力矩为零
-						Mset_Data[i] = 0;
+						offboard_command[i] = 20;					//初始化为力矩模式 设置力矩为零
+						offboard_data[i] = 0;
 					}
+					Status_Set("ONBOARD", GREEN, "ZeroNone", YELLOW);					//外部信号驱动
+					program_mode_code = 200;
 				}
-				if (Program_Flag[0]) {					//软归零控制
-					set_zero_position_temp(0);
-					Home.mode.Label = "ZeroSetted";
-					Home.mode.Color = GREEN;
-					Status_Reflash_Flag = 1;
-					for (int i = 0; i < 3; i++) {
-						Mset_Pattern[i] = 16;					//初始化为位置模式 设置位置为零
-						Mset_Data[i] = 0;
+
+				if (program_group_flag[0]) {
+					PG0_long_press_counter++;
+					switch (PG0_long_press_counter) {
+					case 1:
+						Status_Set("ONBOARD", GREEN, "SetZero", YELLOW);					//外部信号驱动
+						break;
+					case 201:
+						Status_Set("OFFBOARD", YELLOW, "Tighten", LIGHTBLUE);					//内部自定义驱动
+						break;
+					case 401:
+						Status_Set("OFFBOARD", YELLOW, "TestPrg3", LIGHTBLUE);					//内部自定义驱动
+						break;
+					case 601:
+						Status_Set(0, 0, "Exit", GREEN);
+						break;
+					case 801:
+						PG0_long_press_counter = 0;
+						break;
+					default:
+					}
+				} else {
+					if (PG0_long_press_counter != 0) {
+						if (PG0_long_press_counter > 0 && PG0_long_press_counter < 200) {
+							set_zero_position_temp(0);
+							Status_Set(0, 0, "ZeroSetted", GREEN);
+							for (int i = 0; i < 3; i++) {
+								offboard_command[i] = 16;					//初始化为位置模式 设置位置为零
+								offboard_data[i] = 0;
+							}
+							program_mode_code = 201;					//外部信号驱动
+						} else if (PG0_long_press_counter > 200 && PG0_long_press_counter < 400) {
+							program_mode_code = 202;					//内部程序2
+						} else if (PG0_long_press_counter > 400 && PG0_long_press_counter < 600) {
+							program_mode_code = 203;					//内部程序3
+						} else {
+							//闲置
+						}
+						PG0_long_press_counter = 0;					//清空长按计数器
 					}
 				}
 
@@ -232,45 +310,24 @@ int main(void)
 				float Speed_Data[] = { angle_speed_torque_1.speed, angle_speed_torque_2.speed, angle_speed_torque_3.speed };
 				float Torque_Data[] = { angle_speed_torque_1.torque, angle_speed_torque_2.torque, angle_speed_torque_3.torque };
 				for (int i = 0; i < 3; i++) {
-					Home.params[i].num2 = Mset_Data[i];
-					switch (Mset_Pattern[i]) {
+					Home.params[i].num2 = offboard_data[i];
+					switch (offboard_command[i]) {
 					case 20:
-						if (Mset_Data[i] > 1.2) {
-							estop(0);
-							Home.flag.Label = "ERROR";
-							Home.flag.Color = RED;
-							Home.mode.Label = "OverTorque";					//力矩软限制
-							Home.mode.Color = YELLOW;
-							Status_Reflash_Flag = 1;
-							Program_Flag[1] = 0;
-							HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
-						}
-						set_torque(i + 1, Mset_Data[i], 1, 0);
 						Home.params[i].num1 = Torque_Data[i];
 						Paint_DrawString_EN(125, (63 + i * 18), "T->", &Font16, BLACK, GBLUE);
 						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					case 16:
-						set_angle(i + 1, Mset_Data[i], 10, 10, 1);
 						Home.params[i].num1 = Angle_Data[i];
 						Paint_DrawString_EN(125, (63 + i * 18), "P->", &Font16, BLACK, GBLUE);
 						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					case 22:
-						set_speed(i + 1, Mset_Data[i], 1000, 1);
 						Home.params[i].num1 = Speed_Data[i];
 						Paint_DrawString_EN(125, (63 + i * 18), "V->", &Font16, BLACK, GBLUE);
 						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					default:
-						estop(0);
-						Home.flag.Label = "ERROR";
-						Home.flag.Color = RED;
-						Home.mode.Label = "SignalLost";					//信号格式限制
-						Home.mode.Color = YELLOW;
-						Status_Reflash_Flag = 1;
-						Program_Flag[1] = 0;
-						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 					}
 				}
 				Drivers.driver1.angle = angle_speed_torque_1.angle;
@@ -282,25 +339,27 @@ int main(void)
 				Drivers.driver3.angle = angle_speed_torque_3.angle;
 				Drivers.driver3.speed = angle_speed_torque_3.speed;
 				Drivers.driver3.torque = angle_speed_torque_3.torque;
-				Parameters_Reflash_Flag = 1;
+				parameters_reflash_flag = 1;
 
 			} else {
-				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
-				if (TC_INIT_Flag) {
+				if (driver_initialization_flag) {
 					estop(0);
+					driver_initialization_flag = 0;
+					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 				}
 			}
 			/*
-			if (Program_Flag[0]) {					//LED控制
-				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
-			} else {
-				HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
-			}*/
+			 if (Program_Flag[0]) {					//LED控制
+			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
+			 } else {
+			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
+			 }*/
 
-			Motor_Monitor_FLAG = 0;
+			driver_monitoring_flag = 0;
 
-			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, Main_Program_Flag);	//主循环工作标识
-			Main_Program_Flag = !Main_Program_Flag;
+			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, main_loop_flag);	//主循环工作标识
+			main_loop_flag = !main_loop_flag;
+			system_timeout_flag = 0;
 		}
 
 		//SystemTimer += (GetMicros() - SystemTimerLast);

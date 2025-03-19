@@ -59,6 +59,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define TimerPeriod17 5
 #define TimerPeriod16 100
+#define TimerPeriod6 1000
+#define TimerPeriod7 1
 #define KEY1_Pin GPIO_PIN_13
 #define KEY1_GPIO_Port GPIOC
 #define KEY2_Pin GPIO_PIN_14

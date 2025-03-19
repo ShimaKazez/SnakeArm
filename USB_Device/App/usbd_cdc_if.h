@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
+
 #ifndef __USBD_CDC_IF_H__
 #define __USBD_CDC_IF_H__
 
@@ -102,8 +103,8 @@ typedef union {
 } UART_RX;
 extern volatile UART_RX UART_Rx;
 extern volatile uint32_t UART_RxLength;
-extern volatile uint8_t Mset_Pattern[3];
-extern volatile float Mset_Data[3];
+extern volatile uint8_t offboard_command[3];
+extern volatile float offboard_data[3];
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
