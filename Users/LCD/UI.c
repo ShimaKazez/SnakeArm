@@ -7,6 +7,7 @@
 
 #include "UI.h"
 #include "Vofa+.h"
+#include "servo.h"
 
 volatile HOME Home;
 volatile DriverS Drivers;
@@ -401,6 +402,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 					break;
 				case 22:
 					set_speed(i + 1, offboard_data[i], 1000, 1);
+					break;
+				case 50:
+					switch (i) {
+					case 0:
+						Servo_SetAngle(SERVO_CH1, Float_To_ServoAngle(offboard_data[i]));
+						break;
+					case 1:
+						Servo_SetAngle(SERVO_CH2, Float_To_ServoAngle(offboard_data[i]));
+						break;
+					default:
+					}
 					break;
 				default:
 					estop(0);
