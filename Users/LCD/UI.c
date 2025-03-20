@@ -6,8 +6,7 @@
  */
 
 #include "UI.h"
-#include "Vofa+.h"
-#include "servo.h"
+#include "TimerCallbacks.h"
 
 volatile HOME Home;
 volatile DriverS Drivers;
@@ -27,6 +26,7 @@ volatile int program_group_flag[3];
 volatile int parameters_reflash_flag, targets_reflash_flag, status_reflash_flag;
 volatile int driver_monitoring_flag;
 volatile int program_mode_code;
+PID_Controller pid_tension_1, pid_tension_2, pid_tension_3;
 
 int numN(double num) {
 	int offset = 0;
@@ -299,8 +299,16 @@ void UI_Init(void) {
 	Home.mode.Label = "Idling";
 	Home.mode.Color = WHITE;
 	Status_Reflash();
+
 }
 
+void PID_Module_Init(void) {
+	PID_Init(&pid_tension_1, 0.5f, 0.01f, 0.1f);
+	PID_Init(&pid_tension_2, 0.5f, 0.01f, 0.1f);
+	PID_Init(&pid_tension_3, 0.5f, 0.01f, 0.1f);
+}
+
+/*
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim17) { //回传基准时钟5ms
 		HAL_TIM_Base_Start_IT(&htim17);
@@ -426,8 +434,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				set_torque(i + 1, 0.15, 1, 0);					//预紧
 			}
 			break;
-		case 203:					//自定义控制循环
-
+		case 203:					//自定义控制
+			for (int i = 0; i < 3; i++) {
+				set_speed(i + 1, PID_Compute(&pid_tension_1, offboard_data[i], tension_sensor[i], 0.001f), 1000, 1);					//预紧
+			}
 			break;
 		case 999:
 			program_group_flag[0] = 0;
@@ -491,4 +501,5 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		system_timeout_flag++;
 	}
 }
+*/
 

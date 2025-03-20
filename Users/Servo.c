@@ -38,3 +38,16 @@ uint8_t Float_To_ServoAngle(float input) {
     // 四舍五入
     return (uint8_t)(input + 0.5f);
 }
+
+// 设置舵机速度（-100.0~100.0）
+void Servo_SetSpeed(Servo_Channel ch, float speed) {
+    if (speed < -100.0f)
+        speed = -100.0f;
+    else if (speed > 100.0f)
+        speed = 100.0f;
+
+    // 速度到脉冲宽度映射
+    uint16_t pulse = SERVO_NEUTRAL_PULSE + (speed * (SERVO_MAX_PULSE - SERVO_MIN_PULSE)) / 200.0f;
+    __HAL_TIM_SET_COMPARE(SERVO_TIM_HANDLE, ch, pulse);
+}
+

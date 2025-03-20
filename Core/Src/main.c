@@ -37,10 +37,8 @@
 #include "fonts.h"
 #include "image.h"
 #include "LCD_1in14.h"
-#include "Vofa+.h"
 #include "UI.h"
 #include "CAN_Com.h"
-#include "Servo.h"
 
 /* USER CODE END Includes */
 
@@ -157,6 +155,7 @@ int main(void)
 	HAL_ADC_Start(&hadc2);
 
 	UI_Init();
+	PID_Module_Init();
 
 	int driver_initialization_flag = 0;
 	int main_loop_flag = 0;
@@ -272,7 +271,7 @@ int main(void)
 						Status_Set("OFFBOARD", YELLOW, "Tighten", LIGHTBLUE);					//内部自定义驱动
 						break;
 					case 401:
-						Status_Set("OFFBOARD", YELLOW, "TestPrg3", LIGHTBLUE);					//内部自定义驱动
+						Status_Set("OFFBOARD", YELLOW, "Enforce", LIGHTBLUE);					//内部自定义驱动
 						break;
 					case 601:
 						Status_Set(0, 0, "Exit", GREEN);

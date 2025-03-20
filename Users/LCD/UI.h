@@ -17,6 +17,9 @@
 #include "tim.h"
 #include "ADC_Sample.h"
 #include "DrEmpower_can.h"
+#include "Vofa+.h"
+#include "Servo.h"
+#include "PID.h"
 
 void UI_Startup(void);
 void Homepage_Init(void);
@@ -26,6 +29,7 @@ void Status_Reflash(void);
 void Status_Set(char*,uint16_t,char*,uint16_t);
 void KEY_Scan(void);
 void UI_Init(void);
+void PID_Module_Init(void);
 long GetMicros(void);
 
 extern volatile int parameters_reflash_flag, targets_reflash_flag, status_reflash_flag;
