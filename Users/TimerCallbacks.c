@@ -99,7 +99,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		tension_sensor[1] = (float) ADC_value_2[1] / 4096 * 3.3;
 		tension_sensor[2] = (float) ADC_value_2[2] / 4096 * 3.3;
 
-		if (tension_sensor[0] < 0.05 || tension_sensor[1] < 0.05 || tension_sensor[2] < 0.05) {
+		if ((tension_sensor[0] < 0.02 || tension_sensor[1] < 0.02 || tension_sensor[2] < 0.02) && program_mode_code != 999) {	//绳索松弛警告
 			error_code = 801;
 		}
 
@@ -187,15 +187,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			HAL_TIM_Base_Stop_IT(&htim7);
 			estop(0);
 			while (1) {
-
-			}
-			//线程阻塞
-			;
+			} //线程阻塞
 			break;
 		default:
 		}
 
-		if (error_code >= 800 && error_code < 900 && waring_flag == 0) {
+		if (error_code >= 800 && error_code <= 899 && waring_flag == 0) {
 			original_Home.flag.Label = Home.flag.Label;
 			original_Home.flag.Color = Home.flag.Color;
 			original_Home.mode.Label = Home.mode.Label;

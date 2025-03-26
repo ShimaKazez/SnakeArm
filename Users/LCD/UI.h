@@ -20,6 +20,7 @@
 #include "Vofa+.h"
 #include "Servo.h"
 #include "PID.h"
+#include "Kalman.h"
 
 void UI_Startup(void);
 void Homepage_Init(void);

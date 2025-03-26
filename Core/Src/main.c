@@ -156,6 +156,10 @@ int main(void)
 
 	UI_Init();
 	PID_Module_Init();
+	Kalman_Init(&kfp_1);
+	Kalman_Init(&kfp_2);
+	Kalman_Init(&kfp_3);
+	Kalman_Init(&kfp_4);
 
 	int driver_initialization_flag = 0;
 	int main_loop_flag = 0;
