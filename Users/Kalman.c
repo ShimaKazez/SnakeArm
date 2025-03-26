@@ -13,8 +13,8 @@ void Kalman_Init(Kalman *kfp)
 	kfp->Now_P = 0;
 	kfp->out = 0;
 	kfp->Kg = 0;
-	kfp->Q = 0;
-	kfp->R = 0.01;
+	kfp->Q = 0.000008;
+	kfp->R = 0.00145;
 }
 
 /**

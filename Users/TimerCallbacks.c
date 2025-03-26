@@ -95,14 +95,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		HAL_TIM_Base_Start_IT(&htim7);
 
 		ADC_Read();
-		tension_sensor[0] = (float) ADC_value_2[0] / 4096 * 3.3;	//读取传感器信息
-		tension_sensor[1] = (float) ADC_value_2[1] / 4096 * 3.3;
-		tension_sensor[2] = (float) ADC_value_2[2] / 4096 * 3.3;
-
-		if ((tension_sensor[0] < 0.02 || tension_sensor[1] < 0.02 || tension_sensor[2] < 0.02) && program_mode_code != 999) {	//绳索松弛警告
-			error_code = 801;
-		}
-
+		//tension_sensor[0] = (float) ADC_value_2[0] / 4096 * 3.3;	//读取传感器信息
+		//tension_sensor[1] = (float) ADC_value_2[1] / 4096 * 3.3;
+		//tension_sensor[2] = (float) ADC_value_2[2] / 4096 * 3.3;
+		tension_sensor[0] = (float) ADC_value_2_Kalman[0] * 3.3 / 4096;	//读取传感器信息
+		tension_sensor[1] = (float) ADC_value_2_Kalman[1] * 3.3 / 4096;
+		tension_sensor[2] = (float) ADC_value_2_Kalman[2] * 3.3 / 4096;
+		/*
+		 if ((tension_sensor[0] < 0.02 || tension_sensor[1] < 0.02 || tension_sensor[2] < 0.02) && program_mode_code != 999) {	//绳索松弛警告
+		 error_code = 801;
+		 }
+		 */
 		switch (program_mode_code) {	//控制循环模式识别
 		case 000:	//空闲
 			break;
