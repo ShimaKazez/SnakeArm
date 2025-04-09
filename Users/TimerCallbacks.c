@@ -234,7 +234,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			program_mode_code = 999;
 			error_code = 900;
 		}
-		if (system_timeout_flag >= 5 && program_mode_code == 888) {
+		if (system_timeout_flag >= 8 && program_mode_code == 888) {
 			program_mode_code = 999;
 			error_code = 903;
 		}
