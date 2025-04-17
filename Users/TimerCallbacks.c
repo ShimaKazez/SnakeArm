@@ -230,7 +230,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim6) { //占用率基准时钟1000ms
 		HAL_TIM_Base_Start_IT(&htim6);
 
-		if (system_timeout_flag >= 1 && program_mode_code != 888) {
+		if (system_timeout_flag >= 2 && program_mode_code != 888) {
 			program_mode_code = 999;
 			error_code = 900;
 		}
