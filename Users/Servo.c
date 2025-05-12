@@ -18,6 +18,8 @@ void Servo_Init(void) {
 void Servo_SetAngle(Servo_Channel ch, uint8_t angle) {
 	if (angle > 180)
 		angle = 180;
+	if (angle < 0)
+		angle = 0; // 添加下限检查
 	// 角度到脉冲宽度映射
 	uint16_t pulse = SERVO_MIN_PULSE + (angle * (SERVO_MAX_PULSE - SERVO_MIN_PULSE)) / 180;
 	__HAL_TIM_SET_COMPARE(SERVO_TIM_HANDLE, ch, pulse);
@@ -33,21 +35,21 @@ void Servo_WriteMicroseconds(Servo_Channel ch, uint16_t us) {
 }
 
 uint8_t Float_To_ServoAngle(float input) {
-    // 限制范围
-    input = (input < 0.0f) ? 0.0f : (input > 180.0f) ? 180.0f : input;
-    // 四舍五入
-    return (uint8_t)(input + 0.5f);
+	// 限制范围
+	input = (input < 0.0f) ? 0.0f : (input > 180.0f) ? 180.0f : input;
+	// 四舍五入
+	return (uint8_t) (input + 0.5f);
 }
 
 // 设置舵机速度（-100.0~100.0）
 void Servo_SetSpeed(Servo_Channel ch, float speed) {
-    if (speed < -100.0f)
-        speed = -100.0f;
-    else if (speed > 100.0f)
-        speed = 100.0f;
+	if (speed < -100.0f)
+		speed = -100.0f;
+	else if (speed > 100.0f)
+		speed = 100.0f;
 
-    // 速度到脉冲宽度映射
-    uint16_t pulse = SERVO_NEUTRAL_PULSE + (speed * (SERVO_MAX_PULSE - SERVO_MIN_PULSE)) / 200.0f;
-    __HAL_TIM_SET_COMPARE(SERVO_TIM_HANDLE, ch, pulse);
+	// 速度到脉冲宽度映射
+	uint16_t pulse = SERVO_NEUTRAL_PULSE + (speed * (SERVO_MAX_PULSE - SERVO_MIN_PULSE)) / 200.0f;
+	__HAL_TIM_SET_COMPARE(SERVO_TIM_HANDLE, ch, pulse);
 }
 

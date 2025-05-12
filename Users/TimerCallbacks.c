@@ -7,6 +7,7 @@
 
 #include "TimerCallbacks.h"
 #include "UI.h"
+#include "error.h"
 
 extern volatile HOME Home;
 extern volatile DriverS Drivers;
@@ -95,17 +96,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		HAL_TIM_Base_Start_IT(&htim7);
 
 		ADC_Read();
-		//tension_sensor[0] = (float) ADC_value_2[0] / 4096 * 3.3;	//读取传感器信息
-		//tension_sensor[1] = (float) ADC_value_2[1] / 4096 * 3.3;
-		//tension_sensor[2] = (float) ADC_value_2[2] / 4096 * 3.3;
+//		tension_sensor[0] = (float) ADC_value_2[0] / 4096 * 3.3;	//读取传感器信息
+//		tension_sensor[1] = (float) ADC_value_2[1] / 4096 * 3.3;
+//		tension_sensor[2] = (float) ADC_value_2[2] / 4096 * 3.3;
 		tension_sensor[0] = (float) ADC_value_2_Kalman[0] * 3.3 / 4096;	//读取传感器信息
 		tension_sensor[1] = (float) ADC_value_2_Kalman[1] * 3.3 / 4096;
 		tension_sensor[2] = (float) ADC_value_2_Kalman[2] * 3.3 / 4096;
-		/*
-		 if ((tension_sensor[0] < 0.02 || tension_sensor[1] < 0.02 || tension_sensor[2] < 0.02) && program_mode_code != 999) {	//绳索松弛警告
-		 error_code = 801;
-		 }
-		 */
+
+		//	if (tension_sensor[0] < 0.02 || tension_sensor[1] < 0.02 || tension_sensor[2] < 0.02) {
+		//		HandleWarning(WARNING_TENSION_OUT);
+		//	} else {
+		//		HandleWarning(ERROR_NONE);
+		//	}
+
 		switch (program_mode_code) {	//控制循环模式识别
 		case 000:	//空闲
 			break;
@@ -122,7 +125,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 					if (offboard_data[i] > 1.2) {
 						estop(0);
 						program_mode_code = 999;
-						error_code = 901;
+						HandleError(ERROR_TORQUE_OUT);
 					}
 					set_torque(i + 1, offboard_data[i], 1, 0);
 					break;
@@ -146,7 +149,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				default:
 					estop(0);
 					program_mode_code = 999;
-					error_code = 902;
+					HandleError(ERROR_SIGNAL_LOST);
 				}
 			}
 			break;
@@ -164,80 +167,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				}
 			}
 			break;
-		case 999:
-			program_group_flag[0] = 0;
-			program_group_flag[1] = 0;
-			switch (error_code) {
-			case 900:
-				Status_Set("ERROR", RED, "Timeout", YELLOW); // 系统超时
-				break;
-			case 901:
-				Status_Set("ERROR", RED, "TorqueOut", YELLOW); // 力矩软限制
-				break;
-			case 902:
-				Status_Set("ERROR", RED, "SignalLost", YELLOW); // 信号格式限制
-				break;
-			case 903:
-				Status_Set("ERROR", RED, "ZeroOut", YELLOW); // 归零超时
-				break;
-			default:
-				Status_Set("ERROR", RED, "Unknown", RED); // 未知错误
-				break;
-			}
-			Home.params[3].num2 = (float) error_code;
-			Parameters_Reflash();
-			Status_Reflash();
-			HAL_TIM_Base_Stop_IT(&htim7);
-			estop(0);
-			while (1) {
-			} //线程阻塞
-			break;
 		default:
-		}
-
-		if (error_code >= 800 && error_code <= 899 && waring_flag == 0) {
-			original_Home.flag.Label = Home.flag.Label;
-			original_Home.flag.Color = Home.flag.Color;
-			original_Home.mode.Label = Home.mode.Label;
-			original_Home.mode.Color = Home.mode.Color;
-			switch (error_code) {
-			case 800:
-				break;
-			case 801:
-				Status_Set(0, 0, "TenisonOut", YELLOW); // 绳索松弛警告
-				break;
-			case 802:
-
-				break;
-			case 803:
-
-				break;
-			default:
-			}
-			waring_flag = 1;
-			error_code = 0;
-		} else if ((error_code < 800 || error_code > 899) && waring_flag == 1) {
-			Home.flag.Label = original_Home.flag.Label;
-			Home.flag.Color = original_Home.flag.Color;
-			Home.mode.Label = original_Home.mode.Label;
-			Home.mode.Color = original_Home.mode.Color;
-			status_reflash_flag = 1;
-			waring_flag = 0;
-		} else {
 		}
 
 	}
 	if (htim == &htim6) { //占用率基准时钟1000ms
 		HAL_TIM_Base_Start_IT(&htim6);
 
-		if (system_timeout_flag >= 2 && program_mode_code != 888) {
-			program_mode_code = 999;
-			error_code = 900;
-		}
-		if (system_timeout_flag >= 8 && program_mode_code == 888) {
-			program_mode_code = 999;
-			error_code = 903;
-		}
+		CheckAndHandleErrors();
+
 		system_frequency = system_cycle_counter;
 		system_cycle_counter = 0;
 		system_timeout_flag++;

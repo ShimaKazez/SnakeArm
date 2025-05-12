@@ -351,12 +351,12 @@ int main(void)
 					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 				}
 			}
-			/*
-			 if (Program_Flag[0]) {					//LED控制
-			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
-			 } else {
-			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
-			 }*/
+
+//			 if (Program_Flag[0]) {					//LED控制
+//			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
+//			 } else {
+//			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
+
 
 			driver_monitoring_flag = 0;
 

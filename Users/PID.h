@@ -12,11 +12,11 @@
 
 // PID structure
 typedef struct {
-    float Kp;  // Proportional coefficient
-    float Ki;  // Integral coefficient
-    float Kd;  // Derivative coefficient
-    float prev_error;  // Previous error
-    float integral;  // Integral term
+	float Kp;  // Proportional coefficient
+	float Ki;  // Integral coefficient
+	float Kd;  // Derivative coefficient
+	float prev_error;  // Previous error
+	float integral;  // Integral term
 } PID_Controller;
 
 // Function prototypes
