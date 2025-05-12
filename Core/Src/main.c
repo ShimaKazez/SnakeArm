@@ -263,6 +263,7 @@ int main(void) {
 					}
 					Status_Set("ONBOARD", GREEN, "ZeroNone", YELLOW);					//外部信号驱动
 					program_mode_code = 200;
+					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 				}
 
 				if (program_group_flag[0]) {

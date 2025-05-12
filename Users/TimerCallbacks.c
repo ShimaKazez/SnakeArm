@@ -200,6 +200,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	default:
 		// 未知定时器实例
+		NVIC_SystemReset();
 		break;
 	}
 }
