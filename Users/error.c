@@ -79,7 +79,7 @@ void HandleWarning(ErrorCode code) {
 	} else if (code == WARNING_TIME_OUT && !warning_active) {
 		original_Home = Home; // 保存当前状态
 		Status_Set(0, 0, "TimeOut", YELLOW);
-		Home.params[3].Color = RED; // 设置为红色
+		Home.params[3].Color = YELLOW; // 高亮提醒
 		warning_active = 1;
 
 	} else if (code == ERROR_NONE && warning_active) {
