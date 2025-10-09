@@ -12,15 +12,17 @@
 
 // 舵机参数宏定义
 #define SERVO_PWM_FREQ    50      // 频率50Hz（周期20ms）
-#define SERVO_NEUTRAL_PULSE 1500 // 1.5ms
+#define SERVO_NEUTRAL_PULSE 1500  // 1.5ms
 #define SERVO_MIN_PULSE   500     // 0.5ms对应CCR值（根据定时器配置计算）
 #define SERVO_MAX_PULSE   2500    // 2.5ms对应CCR值
-#define SERVO_TIM_HANDLE  &htim3  // 使用的定时器句柄
+#define SERVO_TIM_HANDLE  &htim1  // 使用的定时器句柄
 
 // 舵机通道枚举定义
 typedef enum {
-	SERVO_CH1 = TIM_CHANNEL_3,  // 通道1
-	SERVO_CH2 = TIM_CHANNEL_4   // 通道2
+	SERVO_CH1 = TIM_CHANNEL_1,  // 通道1
+	SERVO_CH2 = TIM_CHANNEL_2,  // 通道2
+	SERVO_CH3 = TIM_CHANNEL_3,  // 通道1
+	SERVO_CH4 = TIM_CHANNEL_4   // 通道2
 } Servo_Channel;
 
 // 函数声明

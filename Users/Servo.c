@@ -12,6 +12,8 @@
 void Servo_Init(void) {
 	HAL_TIM_PWM_Start(SERVO_TIM_HANDLE, SERVO_CH1); // 启动通道1
 	HAL_TIM_PWM_Start(SERVO_TIM_HANDLE, SERVO_CH2); // 启动通道2
+	HAL_TIM_PWM_Start(SERVO_TIM_HANDLE, SERVO_CH3); // 启动通道3
+	HAL_TIM_PWM_Start(SERVO_TIM_HANDLE, SERVO_CH4); // 启动通道4
 }
 
 // 设置舵机角度（0~180°）

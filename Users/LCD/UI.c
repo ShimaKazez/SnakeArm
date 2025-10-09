@@ -11,6 +11,7 @@
 volatile HOME Home;
 volatile DriverS Drivers;
 volatile float tension_sensor[3];
+volatile float PWR_sensor[2];
 //volatile float SystemOccupancy;
 volatile int system_cycle_counter, error_code;
 volatile int system_timeout_flag;
@@ -261,7 +262,7 @@ void Homepage_Init(void) {
 	Home.params[2].Color = WHITE;
 	Home.params[2].num1 = 0;
 
-	Home.params[3].Label = "SYS:";
+	Home.params[3].Label = "BAT:";
 	Home.params[3].Color = WHITE;
 	Home.params[3].num1 = 0;
 
@@ -276,7 +277,7 @@ void Homepage_Init(void) {
 	Paint_DrawString_EN(125, 63, "-->", &Font16, BLACK, GBLUE);
 	Paint_DrawString_EN(125, 81, "-->", &Font16, BLACK, GBLUE);
 	Paint_DrawString_EN(125, 99, "-->", &Font16, BLACK, GBLUE);
-	Paint_DrawString_EN(125, 117, "---", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(125, 117, "CUR", &Font16, BLACK, GBLUE);
 
 	Status_Reflash();
 	Parameters_Reflash();

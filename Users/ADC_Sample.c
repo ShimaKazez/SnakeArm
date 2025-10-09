@@ -8,9 +8,9 @@
 
 #define time_smoothing_window_width 5
 
-volatile uint16_t ADC_value_1[2];
-volatile uint16_t ADC_value_2[4];
-volatile uint16_t ADC_value_2_Kalman[4];
+volatile uint16_t ADC_PWR_Value[2];
+volatile uint16_t ADC_SEN_Value[4];
+volatile uint16_t ADC_SEN_Value_Kalman[4];
 uint16_t time_smoothing_window[4][time_smoothing_window_width];
 uint16_t time_smoothing_counter[4];
 int time_smoothing_flag;
@@ -45,15 +45,18 @@ void ADC_Read(void) {
 	//ADC_Value1[1] = ADC_Read_Single(&hadc1, ADC_CHANNEL_12);
 	//ADC_Value1[0] = ADC_Read_Single(&hadc1, ADC_CHANNEL_15);
 
-	ADC_value_2[0] = SafeADCRead(&hadc2, ADC_CHANNEL_3);
-	ADC_value_2[1] = SafeADCRead(&hadc2, ADC_CHANNEL_4);
-	ADC_value_2[2] = SafeADCRead(&hadc2, ADC_CHANNEL_11);
-	ADC_value_2[3] = SafeADCRead(&hadc2, ADC_CHANNEL_12);
+	ADC_PWR_Value[0] = SafeADCRead(ADC_PWR_HANDLE, ADC_CHANNEL_12);
+	ADC_PWR_Value[1] = SafeADCRead(ADC_PWR_HANDLE, ADC_CHANNEL_15);
 
-	ADC_value_2_Kalman[0] = KalmanFilter(&kfp_1, ADC_value_2[0]);
-	ADC_value_2_Kalman[1] = KalmanFilter(&kfp_2, ADC_value_2[1]);
-	ADC_value_2_Kalman[2] = KalmanFilter(&kfp_3, ADC_value_2[2]);
-	ADC_value_2_Kalman[3] = KalmanFilter(&kfp_4, ADC_value_2[3]);
+	ADC_SEN_Value[0] = SafeADCRead(ADC_SEN_HANDLE, ADC_CHANNEL_3);
+	ADC_SEN_Value[1] = SafeADCRead(ADC_SEN_HANDLE, ADC_CHANNEL_4);
+	ADC_SEN_Value[2] = SafeADCRead(ADC_SEN_HANDLE, ADC_CHANNEL_11);
+	ADC_SEN_Value[3] = SafeADCRead(ADC_SEN_HANDLE, ADC_CHANNEL_12);
+
+	ADC_SEN_Value_Kalman[0] = KalmanFilter(&kfp_1, ADC_SEN_Value[0]);
+	ADC_SEN_Value_Kalman[1] = KalmanFilter(&kfp_2, ADC_SEN_Value[1]);
+	ADC_SEN_Value_Kalman[2] = KalmanFilter(&kfp_3, ADC_SEN_Value[2]);
+	ADC_SEN_Value_Kalman[3] = KalmanFilter(&kfp_4, ADC_SEN_Value[3]);
 
 	/*
 	 for (int i = 0; i < 4; i++) {

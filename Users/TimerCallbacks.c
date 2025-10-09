@@ -12,6 +12,7 @@
 extern volatile HOME Home;
 extern volatile DriverS Drivers;
 extern volatile float tension_sensor[3];
+extern volatile float PWR_sensor[2];
 extern volatile int system_cycle_counter, error_code;
 extern volatile int system_timeout_flag;
 extern int system_frequency;
@@ -71,8 +72,10 @@ void HandleScreenReflash() {
 	}
 	screen_sequence++;
 
-	Home.params[3].num1 = (float) system_frequency / 1000;
-	Home.params[3].num2 = (float) program_mode_code;
+//	Home.params[3].num1 = (float) system_frequency / 1000;
+//	Home.params[3].num2 = (float) program_mode_code;
+	Home.params[3].num1 = PWR_sensor[0];
+	Home.params[3].num2 = PWR_sensor[1];
 
 	Home.status[0].num1 = tension_sensor[0];
 	Home.status[1].num1 = tension_sensor[1];
@@ -95,12 +98,15 @@ void HandleScreenReflash() {
 void HandleControlThread() {
 	static float last_offboard_data[3] = { 0 };
 	ADC_Read();
+	PWR_sensor[0] = (float) ADC_PWR_Value[0] / 4096 * 33;	//读取电源信息
+	PWR_sensor[1] = (float) ADC_PWR_Value[1] / 4096 * 33;
+
 //		tension_sensor[0] = (float) ADC_value_2[0] / 4096 * 3.3;	//读取传感器信息
 //		tension_sensor[1] = (float) ADC_value_2[1] / 4096 * 3.3;
 //		tension_sensor[2] = (float) ADC_value_2[2] / 4096 * 3.3;
-	tension_sensor[0] = (float) ADC_value_2_Kalman[0] * 3.3 / 4096;	//读取传感器信息
-	tension_sensor[1] = (float) ADC_value_2_Kalman[1] * 3.3 / 4096;
-	tension_sensor[2] = (float) ADC_value_2_Kalman[2] * 3.3 / 4096;
+	tension_sensor[0] = (float) ADC_SEN_Value_Kalman[0] * 3.3 / 4096;	//读取传感器信息
+	tension_sensor[1] = (float) ADC_SEN_Value_Kalman[1] * 3.3 / 4096;
+	tension_sensor[2] = (float) ADC_SEN_Value_Kalman[2] * 3.3 / 4096;
 
 	//	if (tension_sensor[0] < 0.02 || tension_sensor[1] < 0.02 || tension_sensor[2] < 0.02) {
 	//		HandleWarning(WARNING_TENSION_OUT);
@@ -110,6 +116,7 @@ void HandleControlThread() {
 
 	switch (program_mode_code) {	//控制循环模式识别
 	case 000:	//空闲
+		parameters_reflash_flag = 1;
 		break;
 	case 101:	//测试程序1
 		break;

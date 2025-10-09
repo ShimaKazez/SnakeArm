@@ -62,6 +62,7 @@
 /* USER CODE BEGIN PV */
 extern volatile uint8_t offboard_command[3];
 extern volatile float offboard_data[3];
+static uint8_t last_offboard_command[3] = { 0 };
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -183,24 +184,24 @@ int main(void)
 	while (1) {
 		//系统刷新率计算
 		system_cycle_counter++;
-		/*//系统占用率计算
-		 SystemCircleTimes++;
-		 if ((float) (HAL_GetTick() - SystemClock) > 1000) {
-		 SystemOccupancy = 1 - ((float) (SystemTimer / 1000) / (float) (HAL_GetTick() - SystemClock));
-		 SystemClock = HAL_GetTick();
-		 SystemCircleTimesRecord = SystemCircleTimes;
-		 SystemCircleTimes = 0;
+		//系统占用率计算
+//		 SystemCircleTimes++;
+//		 if ((float) (HAL_GetTick() - SystemClock) > 1000) {
+//		 SystemOccupancy = 1 - ((float) (SystemTimer / 1000) / (float) (HAL_GetTick() - SystemClock));
+//		 SystemClock = HAL_GetTick();
+//		 SystemCircleTimesRecord = SystemCircleTimes;
+//		 SystemCircleTimes = 0;
+//
+//		 }
+//		 long SystemTimerLast = GetMicros();
 
-		 }
-		 long SystemTimerLast = GetMicros();*/
-
-		//Home.status[0].num2 = (float) ADC_Value1[0] / 4096 * 26.4;
-		//Home.status[1].num2 = (float) ADC_Value1[1] / 4096 * 5;
-		//Home.status[2].num2 = SystemOccupancy * 100;
-		Home.status[0].num1 = tension_sensor[0];
-		Home.status[1].num1 = tension_sensor[1];
-		Home.status[2].num1 = tension_sensor[2];
-		parameters_reflash_flag = 1;
+//		Home.status[0].num2 = (float) ADC_Value1[0] / 4096 * 26.4;
+//		Home.status[1].num2 = (float) ADC_Value1[1] / 4096 * 5;
+//		Home.status[2].num2 = SystemOccupancy * 100;
+//		Home.status[0].num1 = tension_sensor[0];
+//		Home.status[1].num1 = tension_sensor[1];
+//		Home.status[2].num1 = tension_sensor[2];
+//		parameters_reflash_flag = 1;
 
 		KEY_Scan();
 
@@ -263,6 +264,7 @@ int main(void)
 					}
 					Status_Set("ONBOARD", GREEN, "ZeroNone", YELLOW);					//外部信号驱动
 					program_mode_code = 200;
+					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 				}
 
 				if (program_group_flag[0]) {
@@ -317,20 +319,29 @@ int main(void)
 					switch (offboard_command[i]) {
 					case 20:
 						Home.params[i].num1 = Torque_Data[i];
-						Paint_DrawString_EN(125, (63 + i * 18), "T->", &Font16, BLACK, GBLUE);
-						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					case 16:
 						Home.params[i].num1 = Angle_Data[i];
-						Paint_DrawString_EN(125, (63 + i * 18), "P->", &Font16, BLACK, GBLUE);
-						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					case 22:
 						Home.params[i].num1 = Speed_Data[i];
-						Paint_DrawString_EN(125, (63 + i * 18), "V->", &Font16, BLACK, GBLUE);
-						HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 						break;
 					default:
+					}
+					if (offboard_command[i] != last_offboard_command[i]) {
+						switch (offboard_command[i]) {
+						case 20:
+							Paint_DrawString_EN(125, (63 + i * 18), "T->", &Font16, BLACK, GBLUE);
+							break;
+						case 16:
+							Paint_DrawString_EN(125, (63 + i * 18), "P->", &Font16, BLACK, GBLUE);
+							break;
+						case 22:
+							Paint_DrawString_EN(125, (63 + i * 18), "V->", &Font16, BLACK, GBLUE);
+							break;
+						default:
+						}
+						last_offboard_command[i] = offboard_command[i];
 					}
 				}
 				Drivers.driver1.angle = angle_speed_torque_1.angle;
@@ -351,12 +362,11 @@ int main(void)
 					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 				}
 			}
-			/*
-			 if (Program_Flag[0]) {					//LED控制
-			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
-			 } else {
-			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
-			 }*/
+
+//			 if (Program_Flag[0]) {					//LED控制
+//			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
+//			 } else {
+//			 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 
 			driver_monitoring_flag = 0;
 

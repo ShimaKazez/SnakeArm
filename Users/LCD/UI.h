@@ -36,6 +36,7 @@ long GetMicros(void);
 extern volatile int parameters_reflash_flag, targets_reflash_flag, status_reflash_flag;
 extern volatile int program_group_flag[3];
 extern volatile float tension_sensor[3];
+extern volatile float PWR_sensor[2];
 extern volatile float SystemOccupancy;
 extern volatile int system_cycle_counter;
 extern volatile int driver_monitoring_flag;
