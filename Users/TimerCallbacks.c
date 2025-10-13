@@ -13,7 +13,7 @@ extern volatile HOME Home;
 extern volatile DriverS Drivers;
 extern volatile float tension_sensor[3];
 extern volatile float PWR_sensor[2];
-extern volatile int system_cycle_counter, error_code;
+extern volatile int system_cycle_counter;
 extern volatile int system_timeout_flag;
 extern int system_frequency;
 extern int screen_sequence;
@@ -78,9 +78,9 @@ void HandleScreenReflash() {
 	Home.params[3].num1 = PWR_sensor[1];
 	Home.params[3].num2 = PWR_sensor[0];
 
-	Home.status[0].num1 = tension_sensor[0];
-	Home.status[1].num1 = tension_sensor[1];
-	Home.status[2].num1 = tension_sensor[2];
+	Home.status[0].num1 = tension_sensor[0] / 3.3 * 300;
+	Home.status[1].num1 = tension_sensor[1] / 3.3 * 300;
+	Home.status[2].num1 = tension_sensor[2] / 3.3 * 300;
 
 	if (parameters_reflash_flag) {
 		Parameters_Reflash();
@@ -131,10 +131,10 @@ void HandleControlThread() {
 				last_offboard_data[i] = offboard_data[i]; // 更新记录的值
 				switch (offboard_command[i]) {
 				case 20:
-					if (offboard_data[i] > 1.2 || offboard_data[i] < -1.2) {
+					if (offboard_data[i] > 1.2 || offboard_data[i] < -1.2) { //入口限制
 						estop(0);
 						program_mode_code = 999;
-						HandleError(ERROR_TORQUE_OUT);
+						HandleError(1 << 9);
 					}
 					set_torque(i + 1, offboard_data[i], 1, 0);
 					break;
@@ -155,10 +155,10 @@ void HandleControlThread() {
 					default:
 					}
 					break;
-				default:
+				default: //未知指令
 					estop(0);
 					program_mode_code = 999;
-					HandleError(ERROR_SIGNAL_LOST);
+					HandleError(1 << 10);
 				}
 			}
 		}
@@ -191,7 +191,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	case (uint32_t) TIM16: // 屏幕刷新基准时钟100ms
 		HAL_TIM_Base_Start_IT(&htim16);
 		if (!UI_Init_Flag) {
-			HandleScreenReflash();
+			HandleScreenReflash(); //UI启动时暂时终止屏幕刷新线程
 		}
 		break;
 
