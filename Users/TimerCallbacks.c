@@ -17,6 +17,7 @@ extern volatile int system_cycle_counter, error_code;
 extern volatile int system_timeout_flag;
 extern int system_frequency;
 extern int screen_sequence;
+extern volatile int UI_Init_Flag;
 extern uint8_t c_Red, c_Green, c_Blue;
 extern volatile int program_group_flag[3];
 extern volatile int parameters_reflash_flag, targets_reflash_flag, status_reflash_flag;
@@ -74,8 +75,8 @@ void HandleScreenReflash() {
 
 //	Home.params[3].num1 = (float) system_frequency / 1000;
 //	Home.params[3].num2 = (float) program_mode_code;
-	Home.params[3].num1 = PWR_sensor[0];
-	Home.params[3].num2 = PWR_sensor[1];
+	Home.params[3].num1 = PWR_sensor[1];
+	Home.params[3].num2 = PWR_sensor[0];
 
 	Home.status[0].num1 = tension_sensor[0];
 	Home.status[1].num1 = tension_sensor[1];
@@ -99,7 +100,7 @@ void HandleControlThread() {
 	static float last_offboard_data[3] = { 0 };
 	ADC_Read();
 	PWR_sensor[0] = (float) ADC_PWR_Value[0] / 4096 * 33;	//读取电源信息
-	PWR_sensor[1] = (float) ADC_PWR_Value[1] / 4096 * 33;
+	PWR_sensor[1] = (float) ADC_PWR_Value[1] / 4096 * 33 * 1.12;
 
 //		tension_sensor[0] = (float) ADC_value_2[0] / 4096 * 3.3;	//读取传感器信息
 //		tension_sensor[1] = (float) ADC_value_2[1] / 4096 * 3.3;
@@ -189,7 +190,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	case (uint32_t) TIM16: // 屏幕刷新基准时钟100ms
 		HAL_TIM_Base_Start_IT(&htim16);
-		HandleScreenReflash();
+		if (!UI_Init_Flag) {
+			HandleScreenReflash();
+		}
 		break;
 
 	case (uint32_t) TIM7: // 控制循环基准时钟1ms

@@ -21,6 +21,7 @@ int key_push_flag_last[4];
 int key_reflash_flag[4];
 int screen_sequence;
 int parameters_reflash_counter, target_reflash_counter, status_reflash_counter;
+volatile int UI_Init_Flag;
 //int TimerLast;
 uint8_t c_Red, c_Green, c_Blue;
 volatile int program_group_flag[3];
@@ -76,7 +77,7 @@ void UI_Startup(void) {
 	}
 	Paint_ClearWindows(39, 44, 200, 90, BLACK);
 	Paint_DrawString_EN(43, 49, "Snake Arm", &Font24, BLACK, GBLUE);
-	Paint_DrawString_EN(64, 73, "Ver.202502", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(64, 73, "Ver.202510", &Font16, BLACK, GBLUE);
 	HAL_Delay(500);
 	Paint_ClearWindows(0, 0, 239, 134, BLACK);
 }
@@ -285,14 +286,17 @@ void Homepage_Init(void) {
 }
 
 void UI_Init(void) {
+	UI_Init_Flag = 1;
 	DEV_Module_Init(); //IO
 	LCD_1IN14_SetBackLight(SET); //IO
-	DEV_Delay_ms(100);
+//	DEV_Delay_ms(100);
 	LCD_1IN14_Init(HORIZONTAL); //Data
-	DEV_Delay_ms(100);
+//	DEV_Delay_ms(100);
+//	LCD_1IN14_Clear(BLACK); //Data
 	Paint_NewImage(LCD_1IN14.WIDTH, LCD_1IN14.HEIGHT, ROTATE_0, WHITE);
 	Paint_SetClearFuntion(LCD_1IN14_Clear);
 	Paint_SetDisplayFuntion(LCD_1IN14_DrawPaint);
+//	Paint_Clear(BLACK);
 	UI_Startup();
 	Homepage_Init();
 	Home.flag.Label = "[READY]";
@@ -300,7 +304,7 @@ void UI_Init(void) {
 	Home.mode.Label = "Idling";
 	Home.mode.Color = WHITE;
 	Status_Reflash();
-
+	UI_Init_Flag = 0;
 }
 
 void PID_Module_Init(void) {

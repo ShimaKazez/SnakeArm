@@ -25,11 +25,11 @@ LCD_1IN14_ATTRIBUTES LCD_1IN14;
  ******************************************************************************/
 static void LCD_1IN14_Reset(void) {
 	LCD_1IN14_RST_1;
-	DEV_Delay_ms(500);
+	DEV_Delay_ms(100);
 	LCD_1IN14_RST_0;
-	DEV_Delay_ms(500);
+	DEV_Delay_ms(100);
 	LCD_1IN14_RST_1;
-	DEV_Delay_ms(500);
+	DEV_Delay_ms(150);
 }
 
 /******************************************************************************
@@ -79,7 +79,7 @@ static void LCD_1IN14_SendData_16Bit(UWORD Data) {
 static void LCD_1IN14_SetAttributes(UBYTE Scan_dir) {
 	//Get the screen scan direction
 	LCD_1IN14.SCAN_DIR = Scan_dir;
-	UBYTE MemoryAccessReg = 0x00;
+	UBYTE MemoryAccessReg = 0x70;
 
 	//Get GRAM and LCD width and height
 	if (Scan_dir == HORIZONTAL) {

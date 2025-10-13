@@ -6,13 +6,13 @@
  */
 #include "ADC_Sample.h"
 
-#define time_smoothing_window_width 5
+//#define time_smoothing_window_width 5
 
 volatile uint16_t ADC_PWR_Value[2];
 volatile uint16_t ADC_SEN_Value[4];
 volatile uint16_t ADC_SEN_Value_Kalman[4];
-uint16_t time_smoothing_window[4][time_smoothing_window_width];
-uint16_t time_smoothing_counter[4];
+//uint16_t time_smoothing_window[4][time_smoothing_window_width];
+//uint16_t time_smoothing_counter[4];
 int time_smoothing_flag;
 Kalman kfp_1, kfp_2, kfp_3, kfp_4;
 

@@ -42,6 +42,7 @@ extern volatile int system_cycle_counter;
 extern volatile int driver_monitoring_flag;
 extern volatile int program_mode_code;
 extern volatile int system_timeout_flag;
+extern volatile int UI_Init_Flag;
 
 struct ELEMENT {
 	volatile char *Label;
