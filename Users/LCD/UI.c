@@ -248,7 +248,7 @@ void UI_Init(void) {
 	LCD_1IN14_Init(HORIZONTAL); //Data
 //	DEV_Delay_ms(100);
 //	LCD_1IN14_Clear(BLACK); //Data
-	Paint_NewImage(LCD_1IN14.WIDTH, LCD_1IN14.HEIGHT, ROTATE_0, WHITE);
+	Paint_NewImage(LCD_1IN14.WIDTH, LCD_1IN14.HEIGHT, ROTATE_180, WHITE);
 	Paint_SetClearFuntion(LCD_1IN14_Clear);
 	Paint_SetDisplayFuntion(LCD_1IN14_DrawPaint);
 //	Paint_Clear(BLACK);
