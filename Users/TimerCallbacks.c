@@ -127,30 +127,30 @@ void HandleControlThread() {
 		break;
 	case 201:	//外部信号控制循环
 		for (int i = 0; i < 3; i++) {
-			if (offboard_data[i] != last_offboard_data[i]) { // 检查数据是否变化
-				last_offboard_data[i] = offboard_data[i]; // 更新记录的值
-				switch (offboard_command[i]) {
+			if (Control_Data[i] != last_offboard_data[i]) { // 检查数据是否变化
+				last_offboard_data[i] = Control_Data[i]; // 更新记录的值
+				switch (Control_Command[i]) {
 				case 20:
-					if (offboard_data[i] > 1.2 || offboard_data[i] < -1.2) { //入口限制
+					if (Control_Data[i] > 1.2 || Control_Data[i] < -1.2) { //入口限制
 						estop(0);
 						program_mode_code = 999;
 						HandleError(1 << 9);
 					}
-					set_torque(i + 1, offboard_data[i], 1, 0);
+					set_torque(i + 1, Control_Data[i], 1, 0);
 					break;
 				case 16:
-					set_angle(i + 1, offboard_data[i], 10, 10, 1);
+					set_angle(i + 1, Control_Data[i], 10, 10, 1);
 					break;
 				case 22:
-					set_speed(i + 1, offboard_data[i], 1000, 1);
+					set_speed(i + 1, Control_Data[i], 1000, 1);
 					break;
 				case 50:
 					switch (i) {
 					case 0:
-						Servo_SetAngle(SERVO_CH1, Float_To_ServoAngle(offboard_data[i]));
+						Servo_SetAngle(SERVO_CH1, Float_To_ServoAngle(Control_Data[i]));
 						break;
 					case 1:
-						Servo_SetAngle(SERVO_CH2, Float_To_ServoAngle(offboard_data[i]));
+						Servo_SetAngle(SERVO_CH2, Float_To_ServoAngle(Control_Data[i]));
 						break;
 					default:
 					}
@@ -164,18 +164,33 @@ void HandleControlThread() {
 		}
 		break;
 	case 202:					//自定义控制循环
-//		for (int i = 0; i < 3; i++) {
-//			set_torque(i + 1, 0.15, 1, 0);					//预紧
-//		}
+		for (int i = 0; i < 3; i++) {
+			Control_Data[i] = 0.15;					//预紧补偿
+			set_torque(i + 1, Control_Data[i], 1, 0);
+		}
 		break;
 	case 203:					//自定义控制
-//		for (int i = 0; i < 3; i++) {
-//			if (tension_sensor[i] < 0.1) {
-//				set_torque(i + 1, 0.15, 1, 0);					//预紧
-//			} else {
-//				set_speed(i + 1, PID_Compute(&pid_tension_1, offboard_data[i], tension_sensor[i], 0.001f), 1000, 1);					//预紧
-//			}
-//		}
+		for (int i = 0; i < 3; i++) {
+			// 计算实际张力值
+			float actual_tension = tension_sensor[i] / 3.3f * 300.0f;
+			// 目标张力为20
+			float target_tension = 20.0f;
+			// 时间间隔（假设为1ms）
+			float dt = 0.001f;
+			// 使用PID计算速度控制值
+			float speed = PID_Compute(&pid_tension_1 + i, target_tension, actual_tension, dt);
+			// 定义速度限制（mm/s）
+			float speed_limit[2] = { 5.0f, -5.0f }; // 上限为5mm/s，下限为-5mm/s
+			// 应用速度限制
+			if (speed > speed_limit[0]) {
+				speed = speed_limit[0];
+			} else if (speed < speed_limit[1]) {
+				speed = speed_limit[1];
+			}
+			Control_Data[i] = speed * 60.0f / (3.14159f * 48.0f);
+			// 设置速度控制
+			set_speed(i + 1, Control_Data[i], 1000, 1);
+		}
 		break;
 	default:
 	}

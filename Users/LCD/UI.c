@@ -263,8 +263,8 @@ void UI_Init(void) {
 }
 
 void PID_Module_Init(void) {
-	PID_Init(&pid_tension_1, 0.5f, 0.01f, 0.1f);
-	PID_Init(&pid_tension_2, 0.5f, 0.01f, 0.1f);
-	PID_Init(&pid_tension_3, 0.5f, 0.01f, 0.1f);
+	PID_Init(&pid_tension_1, 0.05f, 0.0f, 0.0f);
+	PID_Init(&pid_tension_2, 0.05f, 0.0f, 0.0f);
+	PID_Init(&pid_tension_3, 0.05f, 0.0f, 0.0f);
 }
 

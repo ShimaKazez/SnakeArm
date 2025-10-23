@@ -103,8 +103,8 @@ typedef union {
 } UART_RX;
 extern volatile UART_RX UART_Rx;
 extern volatile uint32_t UART_RxLength;
-extern volatile uint8_t offboard_command[3];
-extern volatile float offboard_data[3];
+extern volatile uint8_t Control_Command[3];
+extern volatile float Control_Data[3];
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
