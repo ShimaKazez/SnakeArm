@@ -8,13 +8,10 @@
 
 //#define time_smoothing_window_width 5
 
-volatile uint16_t ADC_PWR_Value[2];
-volatile uint16_t ADC_SEN_Value[4];
-volatile uint16_t ADC_SEN_Value_Kalman[4];
-//uint16_t time_smoothing_window[4][time_smoothing_window_width];
-//uint16_t time_smoothing_counter[4];
-int time_smoothing_flag;
-Kalman kfp_1, kfp_2, kfp_3, kfp_4;
+uint16_t ADC_PWR_Value[2];
+uint16_t ADC_SEN_Value[4];
+uint16_t ADC_SEN_Value_Kalman[4];
+Kalman KFP_SEN_1, KFP_SEN_2, KFP_SEN_3, KFP_SEN_4;
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
@@ -53,10 +50,10 @@ void ADC_Read(void) {
 	ADC_SEN_Value[2] = SafeADCRead(ADC_SEN_HANDLE, ADC_CHANNEL_11);
 	ADC_SEN_Value[3] = SafeADCRead(ADC_SEN_HANDLE, ADC_CHANNEL_12);
 
-	ADC_SEN_Value_Kalman[0] = KalmanFilter(&kfp_1, ADC_SEN_Value[0]);
-	ADC_SEN_Value_Kalman[1] = KalmanFilter(&kfp_2, ADC_SEN_Value[1]);
-	ADC_SEN_Value_Kalman[2] = KalmanFilter(&kfp_3, ADC_SEN_Value[2]);
-	ADC_SEN_Value_Kalman[3] = KalmanFilter(&kfp_4, ADC_SEN_Value[3]);
+	ADC_SEN_Value_Kalman[0] = KalmanFilter(&KFP_SEN_1, ADC_SEN_Value[0]);
+	ADC_SEN_Value_Kalman[1] = KalmanFilter(&KFP_SEN_2, ADC_SEN_Value[1]);
+	ADC_SEN_Value_Kalman[2] = KalmanFilter(&KFP_SEN_3, ADC_SEN_Value[2]);
+	ADC_SEN_Value_Kalman[3] = KalmanFilter(&KFP_SEN_4, ADC_SEN_Value[3]);
 
 	/*
 	 for (int i = 0; i < 4; i++) {

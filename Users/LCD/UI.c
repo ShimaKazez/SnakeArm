@@ -12,23 +12,20 @@ volatile HOME Home;
 volatile DriverS Drivers;
 volatile float tension_sensor[3];
 volatile float PWR_sensor[2];
-//volatile float SystemOccupancy;
 volatile int system_cycle_counter, error_code;
 volatile int system_timeout_flag;
-int system_frequency;
-int key_push_flag[4];
-int key_push_flag_last[4];
-int key_reflash_flag[4];
-int screen_sequence;
-int parameters_reflash_counter, target_reflash_counter, status_reflash_counter;
+volatile int screen_sequence;
 volatile int UI_Init_Flag;
-//int TimerLast;
-uint8_t c_Red, c_Green, c_Blue;
-volatile int program_group_flag[3];
-volatile int parameters_reflash_flag, targets_reflash_flag, status_reflash_flag;
+volatile uint8_t c_Red, c_Green, c_Blue;
+volatile int Buttom_Flag[3];
+volatile int parameters_reflash_flag, Targets_Reflash_Flag, StStus_Reflash_Flag;
 volatile int driver_monitoring_flag;
 volatile int program_mode_code;
-PID_Controller pid_tension_1, pid_tension_2, pid_tension_3;
+int volatile system_frequency;
+int Buttom_Pushed_Flag[4];
+int Buttom_Pushed_Flag_Last[4];
+int Buttom_Reflash_Flag[4];
+int parameters_reflash_counter, target_reflash_counter, status_reflash_counter;
 
 int numN(double num) {
 	int offset = 0;
@@ -77,7 +74,7 @@ void UI_Startup(void) {
 	}
 	Paint_ClearWindows(39, 44, 200, 90, BLACK);
 	Paint_DrawString_EN(43, 49, "Snake Arm", &Font24, BLACK, GBLUE);
-	Paint_DrawString_EN(64, 73, "Ver.202510", &Font16, BLACK, GBLUE);
+	Paint_DrawString_EN(64, 73, "Ver.202511", &Font16, BLACK, GBLUE);
 	HAL_Delay(500);
 	Paint_ClearWindows(0, 0, 239, 134, BLACK);
 }
@@ -146,45 +143,43 @@ void Status_Set(char *flag_label, uint16_t flag_color, char *mode_label, uint16_
 		Home.mode.Label = mode_label;
 		Home.mode.Color = mode_color;
 	}
-	status_reflash_flag = 1;
+	StStus_Reflash_Flag = 1;
 }
 
 void KEY_Scan(void) {
-	key_push_flag_last[0] = key_push_flag[0];
-	key_push_flag_last[1] = key_push_flag[1];
-	key_push_flag_last[2] = key_push_flag[2];
-	key_push_flag_last[3] = key_push_flag[3];
-	key_push_flag[0] = !HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin);
-	key_push_flag[1] = !HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin);
-	key_push_flag[2] = !HAL_GPIO_ReadPin(KEYIN1_GPIO_Port, KEYIN1_Pin);
-	key_push_flag[3] = !HAL_GPIO_ReadPin(KEYIN2_GPIO_Port, KEYIN2_Pin);
-	key_reflash_flag[0] = key_push_flag[0] ^ key_push_flag_last[0];
-	key_reflash_flag[1] = key_push_flag[1] ^ key_push_flag_last[1];
-	key_reflash_flag[2] = key_push_flag[2] ^ key_push_flag_last[2];
-	key_reflash_flag[3] = key_push_flag[3] ^ key_push_flag_last[3];
+	for (int i = 0; i < 4; i++) {
+		Buttom_Pushed_Flag_Last[i] = Buttom_Pushed_Flag[i];
+	}
+	Buttom_Pushed_Flag[0] = !HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin);
+	Buttom_Pushed_Flag[1] = !HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin);
+	Buttom_Pushed_Flag[2] = !HAL_GPIO_ReadPin(KEYIN1_GPIO_Port, KEYIN1_Pin);
+	Buttom_Pushed_Flag[3] = !HAL_GPIO_ReadPin(KEYIN2_GPIO_Port, KEYIN2_Pin);
+	for (int i = 0; i < 4; i++) {
+		Buttom_Reflash_Flag[i] = Buttom_Pushed_Flag[i] ^ Buttom_Pushed_Flag_Last[i];
+	}
 
 	/*--------KEY1 PUSH--------*/ //自复位按键
-	if (key_reflash_flag[0]) {
-		program_group_flag[0] = key_push_flag[0];
+	if (Buttom_Reflash_Flag[0]) {
+		Buttom_Flag[0] = Buttom_Pushed_Flag[0];
 		goto Reflash;
 	}
 	/*--------KEY2 CLICK--------*/ //自锁按键
-	if (key_reflash_flag[1]) {
-		if (key_push_flag[1]) {
-			program_group_flag[0] = 0;
-			program_group_flag[2] = 0;
-			program_group_flag[1] = !program_group_flag[1];
+	if (Buttom_Reflash_Flag[1]) {
+		if (Buttom_Pushed_Flag[1]) {
+			Buttom_Flag[0] = 0;
+			Buttom_Flag[2] = 0;
+			Buttom_Flag[1] = !Buttom_Flag[1];
 		}
 		goto Reflash;
 	}
 	/*--------KEYIN1 ON--------*/
-	if (key_reflash_flag[2]) {
+	if (Buttom_Reflash_Flag[2]) {
 		goto Reflash;
 	}
-	Reflash: if (key_reflash_flag[0] || key_reflash_flag[1] || key_reflash_flag[2] || key_reflash_flag[3]) {
-		status_reflash_flag = 1;
+	Reflash: if (Buttom_Reflash_Flag[0] || Buttom_Reflash_Flag[1] || Buttom_Reflash_Flag[2] || Buttom_Reflash_Flag[3]) {
+		StStus_Reflash_Flag = 1;
 	}
-	targets_reflash_flag = 1;
+	Targets_Reflash_Flag = 1;
 }
 
 void Homepage_Init(void) {
@@ -262,9 +257,21 @@ void UI_Init(void) {
 	UI_Init_Flag = 0;
 }
 
-void PID_Module_Init(void) {
-	PID_Init(&pid_tension_1, 0.05f, 0.0f, 0.0f);
-	PID_Init(&pid_tension_2, 0.05f, 0.0f, 0.0f);
-	PID_Init(&pid_tension_3, 0.05f, 0.0f, 0.0f);
+void HandleMenuSwitch(MenuItem menu_items[], int size, int *counter) {
+	static int current_index = 0;
+	int MENU_ITEM_COUNT = size;
+
+	if (*counter == 1) {
+		// 显示当前菜单项
+		Status_Set(menu_items[current_index].flag_label, menu_items[current_index].flag_color, menu_items[current_index].mode_label, menu_items[current_index].mode_color);
+	} else if (*counter > 200) {
+		// 切换到下一个菜单项
+		current_index = (current_index + 1) % MENU_ITEM_COUNT;
+		*counter = 0; // 重置计数器
+	} else if (*counter == 0) {
+		// 根据当前菜单项执行操作
+		program_mode_code = menu_items[current_index].program_mode_code;
+		current_index = 0; // 重置菜单索引
+	}
 }
 

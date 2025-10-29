@@ -7,6 +7,8 @@
 
 #include "PID.h"
 
+PID_Controller pid_tension[3];
+
 // Initialize PID controller
 void PID_Init(PID_Controller *pid, float Kp, float Ki, float Kd) {
 	pid->Kp = Kp;
@@ -26,3 +28,8 @@ float PID_Compute(PID_Controller *pid, float setpoint, float tension, float dt) 
 	return output;
 }
 
+void PID_Module_Init(void) {
+	for (int i = 0; i < 3; i++) {
+		PID_Init(&pid_tension[i], 0.5f, 0.0f, 0.0f);
+	}
+}

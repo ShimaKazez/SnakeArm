@@ -8,6 +8,7 @@
 #ifndef LCD_UI_H_
 #define LCD_UI_H_
 #include <CAN_Com.h>
+#include <Filters.h>
 #include <stdio.h>
 #include "string.h"
 #include "stdint.h"
@@ -20,7 +21,6 @@
 #include "Vofa+.h"
 #include "Servo.h"
 #include "PID.h"
-#include "Kalman.h"
 
 void UI_Startup(void);
 void Homepage_Init(void);
@@ -33,8 +33,8 @@ void UI_Init(void);
 void PID_Module_Init(void);
 long GetMicros(void);
 
-extern volatile int parameters_reflash_flag, targets_reflash_flag, status_reflash_flag;
-extern volatile int program_group_flag[3];
+extern volatile int parameters_reflash_flag, Targets_Reflash_Flag, StStus_Reflash_Flag;
+extern volatile int Buttom_Flag[3];
 extern volatile float tension_sensor[3];
 extern volatile float PWR_sensor[2];
 extern volatile float SystemOccupancy;
@@ -43,6 +43,9 @@ extern volatile int driver_monitoring_flag;
 extern volatile int program_mode_code;
 extern volatile int system_timeout_flag;
 extern volatile int UI_Init_Flag;
+extern volatile int system_frequency;
+extern volatile int screen_sequence;
+extern volatile uint8_t c_Red, c_Green, c_Blue;
 
 struct ELEMENT {
 	volatile char *Label;
@@ -72,5 +75,15 @@ typedef struct {
 	volatile struct DriverStatus driver3;
 } DriverS;
 extern volatile DriverS Drivers;
+
+// 定义菜单项结构体
+typedef struct {
+	char *flag_label;
+	uint16_t flag_color;
+	char *mode_label;
+	uint16_t mode_color;
+	int program_mode_code;
+} MenuItem;
+void HandleMenuSwitch(MenuItem[], int, int*);
 
 #endif /* LCD_UI_H_ */

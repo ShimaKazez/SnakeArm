@@ -22,6 +22,8 @@ typedef struct {
 // Function prototypes
 void PID_Init(PID_Controller *pid, float Kp, float Ki, float Kd);
 float PID_Compute(PID_Controller *pid, float setpoint, float tension, float dt);
+void PID_Module_Init(void);
+extern PID_Controller pid_tension[3];
 
 #endif /* PID_H_ */
 

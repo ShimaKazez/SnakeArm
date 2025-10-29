@@ -39,6 +39,7 @@
 #include "LCD_1in14.h"
 #include "UI.h"
 #include "CAN_Com.h"
+#include "error.h"
 
 /* USER CODE END Includes */
 
@@ -155,10 +156,8 @@ int main(void) {
 	HAL_ADC_Start(&hadc2);
 
 	PID_Module_Init();
-	Kalman_Init(&kfp_1);
-	Kalman_Init(&kfp_2);
-	Kalman_Init(&kfp_3);
-	Kalman_Init(&kfp_4);
+	Kalman_Init_All();
+	Status_monitor_init_all();
 
 	int driver_initialization_flag = 0;
 	int main_loop_flag = 0;
@@ -166,6 +165,15 @@ int main(void) {
 	struct angle_speed_torque angle_speed_torque_1 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
+	extern volatile float Angle_Data[3];
+	extern volatile float Speed_Data[3];
+	extern volatile float Torque_Data[3];
+
+	// 定义菜单项数组
+	MenuItem L1_menu_items[] = { { "[EXIT]", CYAN, "Return", GREEN, 000 }, { "TEST", CYAN, "TestPrg1", LIGHTBLUE, 101 }, { "TEST", CYAN, "TestPrg2", LIGHTBLUE, 102 }, { "TEST", CYAN, "TestPrg3",
+	LIGHTBLUE, 103 }, };
+	MenuItem L2_menu_items[] = { { "[EXIT]", CYAN, "Return", GREEN, 000 }, { "ONBOARD", GREEN, "ZeroSetted", YELLOW, 201 }, { "CUSTOM", YELLOW, "Tighten", LIGHTBLUE, 202 }, { "CUSTOM", YELLOW,
+			"Enforce", LIGHTBLUE, 203 }, };
 
 	//uint8_t SystemClock = 0;
 	//long SystemTimer = 0;
@@ -208,49 +216,24 @@ int main(void) {
 		KEY_Scan();
 
 		if (driver_monitoring_flag) {		//回传基准时钟驱动
-			if (!program_group_flag[1]) {	//主程序未执行下的操作，通常用于测试
-				if (program_group_flag[0]) {
+			if (!Buttom_Flag[1]) {	//主程序未执行下的操作，通常用于测试
+				if (Buttom_Flag[0]) {
 					PG0_long_press_counter++;
-					Status_Set("[TEST]", CYAN, 0, 0);
-					switch (PG0_long_press_counter) {
-					case 1:
-						Status_Set(0, 0, "Exit", GREEN);
-						break;
-					case 201:
-						Status_Set(0, 0, "TestPrg1", LIGHTBLUE);
-						break;
-					case 401:
-						Status_Set(0, 0, "TestPrg2", LIGHTBLUE);
-						break;
-					case 601:
-						Status_Set(0, 0, "TestPrg3", LIGHTBLUE);
-						break;
-					case 800:
-						PG0_long_press_counter = 0;
-						break;
-					default:
-					}
+					HandleMenuSwitch(L1_menu_items, sizeof(L1_menu_items) / sizeof(MenuItem), &PG0_long_press_counter);
 				} else {	//解算工作状态
-					if (PG0_long_press_counter != 0) {	//测试子程序，仅执行一次
-						if (PG0_long_press_counter > 0 && PG0_long_press_counter < 200) {
-							program_mode_code = 000;
-							Status_Set("[READY]", GREEN, "Idling", WHITE);
-							//测试程序1
-						} else if (PG0_long_press_counter > 200 && PG0_long_press_counter < 400) {
-							program_mode_code = 101;
-							//测试程序2
-						} else if (PG0_long_press_counter > 400 && PG0_long_press_counter < 600) {
-							program_mode_code = 102;
-							//测试程序3
-						} else if (PG0_long_press_counter > 600 && PG0_long_press_counter < 800) {
-							program_mode_code = 103;
-						} else {
-						}
+					if (PG0_long_press_counter != 0) {
 						PG0_long_press_counter = 0;	//清空长按计数器
+						HandleMenuSwitch(L1_menu_items, sizeof(L1_menu_items) / sizeof(MenuItem), &PG0_long_press_counter);
+						switch (program_mode_code) {
+						case 000:
+							Status_Set("[READY]", GREEN, "Idling", WHITE);
+							break;
+						default:
+						}
 					}
 				}
 			}
-			if (program_group_flag[1]) {
+			if (Buttom_Flag[1]) {
 				if (!driver_initialization_flag) {	//初始化设置 仅执行一次
 					driver_initialization_flag = 1;
 					program_mode_code = 888;	//临时屏蔽超时错误
@@ -269,61 +252,60 @@ int main(void) {
 					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 				}
 
-				if (program_group_flag[0]) {
+				if (Buttom_Flag[0]) {
 					PG0_long_press_counter++;
-					switch (PG0_long_press_counter) {
-					case 1:
-						Status_Set("ONBOARD", GREEN, "SetZero", YELLOW);					//外部信号驱动
-						break;
-					case 201:
-						Status_Set("CUSTOM", YELLOW, "Tighten", LIGHTBLUE);					//内部自定义驱动
-						break;
-					case 401:
-						Status_Set("CUSTOM", YELLOW, "Enforce", LIGHTBLUE);					//内部自定义驱动
-						break;
-					case 601:
-						Status_Set(0, 0, "Exit", GREEN);
-						break;
-					case 801:
-						PG0_long_press_counter = 0;
-						break;
-					default:
-					}
-				} else {
+					HandleMenuSwitch(L2_menu_items, sizeof(L2_menu_items) / sizeof(MenuItem), &PG0_long_press_counter);
+				} else {	//解算工作状态
 					if (PG0_long_press_counter != 0) {
-						if (PG0_long_press_counter > 0 && PG0_long_press_counter < 200) {
+						PG0_long_press_counter = 0;	//清空长按计数器
+						HandleMenuSwitch(L2_menu_items, sizeof(L2_menu_items) / sizeof(MenuItem), &PG0_long_press_counter);
+						switch (program_mode_code) {
+						case 000:
+							Status_Set("[READY]", GREEN, "Idling", WHITE);
+							for (int i = 0; i < 3; i++) {
+								Control_Command[i] = 20;	//初始化为力矩模式 设置力矩为零
+								Control_Data[i] = 0;
+							}
+							break;
+						case 201:
 							set_zero_position_temp(0);
 							Status_Set(0, 0, "ZeroSetted", GREEN);
 							for (int i = 0; i < 3; i++) {
-								Control_Command[i] = 16;					//初始化为位置模式 设置位置为零
+								Control_Command[i] = 16;	//初始化为位置模式 设置位置为零
 								Control_Data[i] = 0;
 							}
-							program_mode_code = 201;					//外部信号驱动
-						} else if (PG0_long_press_counter > 200 && PG0_long_press_counter < 400) {
+							break;
+						case 202:
 							for (int i = 0; i < 3; i++) {
-								Control_Command[i] = 20;					//初始化为力矩模式 设置力矩为零
+								Control_Command[i] = 20;	//初始化为力矩模式 设置力矩为零
 								Control_Data[i] = 0;
 							}
-							program_mode_code = 202;					//内部程序2
-						} else if (PG0_long_press_counter > 400 && PG0_long_press_counter < 600) {
+							break;
+						case 203:
 							for (int i = 0; i < 3; i++) {
-								Control_Command[i] = 22;					//初始化为速度模式 设置速度为零
+								Control_Command[i] = 22;	//初始化为速度模式 设置速度为零
 								Control_Data[i] = 0;
 							}
-							program_mode_code = 203;					//内部程序3
-						} else {
-							//闲置
+							break;
+						default:
 						}
-						PG0_long_press_counter = 0;					//清空长按计数器
 					}
 				}
 
 				angle_speed_torque_1 = angle_speed_torque_state(1);
 				angle_speed_torque_2 = angle_speed_torque_state(2);
 				angle_speed_torque_3 = angle_speed_torque_state(3);
-				float Angle_Data[] = { angle_speed_torque_1.angle, angle_speed_torque_2.angle, angle_speed_torque_3.angle };
-				float Speed_Data[] = { angle_speed_torque_1.speed, angle_speed_torque_2.speed, angle_speed_torque_3.speed };
-				float Torque_Data[] = { angle_speed_torque_1.torque, angle_speed_torque_2.torque, angle_speed_torque_3.torque };
+
+				Angle_Data[0] = angle_speed_torque_1.angle;
+				Angle_Data[1] = angle_speed_torque_2.angle;
+				Angle_Data[2] = angle_speed_torque_3.angle;
+				Speed_Data[0] = angle_speed_torque_1.speed;
+				Speed_Data[1] = angle_speed_torque_2.speed;
+				Speed_Data[2] = angle_speed_torque_3.speed;
+				Torque_Data[0] = angle_speed_torque_1.torque;
+				Torque_Data[1] = angle_speed_torque_2.torque;
+				Torque_Data[2] = angle_speed_torque_3.torque;
+
 				for (int i = 0; i < 3; i++) {
 					Home.params[i].num2 = Control_Data[i];
 					switch (Control_Command[i]) {

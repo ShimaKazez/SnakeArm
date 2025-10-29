@@ -5,15 +5,22 @@
  *      Author: ME_Gu
  */
 
-#include "Kalman.h"
+#include <Filters.h>
 
-void Kalman_Init(Kalman *kfp) {
+void Kalman_Init_SEN(Kalman *kfp) {
 	kfp->Last_P = 1;
 	kfp->Now_P = 0;
 	kfp->out = 0;
 	kfp->Kg = 0;
-	kfp->Q = 0.000008;
-	kfp->R = 0.00145;
+	kfp->Q = 0.0000001;
+	kfp->R = 0.0000013;
+}
+
+void Kalman_Init_All() {
+	Kalman_Init_SEN(&KFP_SEN_1);
+	Kalman_Init_SEN(&KFP_SEN_2);
+	Kalman_Init_SEN(&KFP_SEN_3);
+	Kalman_Init_SEN(&KFP_SEN_4);
 }
 
 /**

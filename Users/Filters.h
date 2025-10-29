@@ -1,12 +1,12 @@
 /*
- * Kalman.h
+ * Filters.h
  *
  *  Created on: Mar 26, 2025
  *      Author: ME_Gu
  */
 
-#ifndef Kalman_H
-#define Kalman_H
+#ifndef Filters_H
+#define Filters_H
 
 #include "main.h"
 
@@ -19,9 +19,8 @@ typedef struct {
 	float R; //观测噪声协方差
 } Kalman;
 
-void Kalman_Init(Kalman *kfp);
+void Kalman_Init_All(void);
 float KalmanFilter(Kalman *kfp, float input);
+extern Kalman KFP_SEN_1, KFP_SEN_2, KFP_SEN_3, KFP_SEN_4;
 
-extern Kalman kfp_1, kfp_2, kfp_3, kfp_4;
-
-#endif /* KALMAN_H_ */
+#endif /* FILTERS_H_ */
