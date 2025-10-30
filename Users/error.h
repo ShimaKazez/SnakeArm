@@ -2,7 +2,6 @@
 #define ERROR_H_
 
 #include "UI.h"
-#include "ADC_Sample.h"
 
 // 定义联合体
 typedef union {
@@ -19,8 +18,8 @@ typedef union {
 		uint16_t WARNING_TORQUE_OUT :1; // Reserved (Bit 7)
 
 		uint16_t ERROR_SIGNAL_LOST :1; // Bit 8
-		uint16_t ERROR_ZERO_OUT :1; // Bit 9
-		uint16_t ERROR_TIMEOUT :1; // Bit 10
+		uint16_t ERROR_TIMEOUT :1; // Bit 9
+		uint16_t ERROR_10 :1; // Bit 10
 		uint16_t ERROR_11 :1; // Bit 11
 
 		uint16_t ERROR_TENSION_OUT :1; // Reserved (Bit 12)
@@ -29,9 +28,10 @@ typedef union {
 		uint16_t ERROR_TORQUE_OUT :1; // Reserved (Bit 15)
 	} bits; // 按位访问
 } ErrorCodeUnion;
+extern volatile ErrorCodeUnion ErrorCode_Sys; // 全局错误代码变量
 
 // 错误和警告计数器上限
-#define COUNTER_LIMIT 10
+#define COUNTER_LIMIT 50
 
 // 监控变量结构体
 typedef struct {
@@ -42,38 +42,20 @@ typedef struct {
 	float warn_high_limit;     // 警告上限
 	uint16_t error_counter;    // 错误计数器
 	uint16_t warn_counter;     // 警告计数器
-	uint32_t error_bitmask;    // 错误位掩码
-	uint32_t warn_bitmask;     // 警告位掩码
+	uint16_t error_bitmask;    // 错误位掩码
+	uint16_t warn_bitmask;     // 警告位掩码
 } StatusMonitor;
-typedef struct {
-    StatusMonitor **monitors;    // 指向监控器指针数组
-    uint8_t monitor_count;       // 监控器数量
-    uint32_t shared_error_mask;  // 共享的错误位掩码
-    uint32_t shared_warn_mask;   // 共享的警告位掩码
-} MonitorGroup_t;
 extern StatusMonitor Tension_Monitors[3];
 extern StatusMonitor Angle_Monitors[3];
 extern StatusMonitor Speed_Monitors[3];
 extern StatusMonitor Torque_Monitors[3];
-extern MonitorGroup_t tension_monitors_group;
-extern MonitorGroup_t angle_monitors_group;
-extern MonitorGroup_t speed_monitors_group;
-extern MonitorGroup_t torque_monitors_group;
-void MonitorGroup_Update(MonitorGroup_t*);
-void Status_monitor_update(StatusMonitor*,float);
+extern StatusMonitor Voltage_Monitor, Current_Monitor, Timeout_Monitor;
+uint16_t Status_monitor(StatusMonitor*, float);
 void Status_monitor_init_all(void);
-
-
-
-#define MIN_VOLTAGE 0.0
-#define MAX_VOLTAGE 28.0
-#define MAX_CURRENT 8.0
 
 // 函数声明
 void HandleError(uint16_t);
 void HandleWarning(uint16_t);
-void CheckAndHandleErrors(void);
 void ClearError(uint16_t);
-void ClearWarning(uint16_t);
 
 #endif /* ERROR_H_ */

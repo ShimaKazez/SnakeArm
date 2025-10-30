@@ -12,24 +12,19 @@
 
 float tension_sensor_raw[3];
 
-volatile float Tension_Data[3] = { 0.0f, 0.0f, 0.0f };
-volatile float Angle_Data[3] = { 0.0f, 0.0f, 0.0f };
-volatile float Speed_Data[3] = { 0.0f, 0.0f, 0.0f };
-volatile float Torque_Data[3] = { 0.0f, 0.0f, 0.0f };
-
 int waring_flag = 0;
 HOME original_Home;
 
 void HandleDriverMonitoring() {
-	vofa_send_data(0, Drivers.driver1.angle);
-	vofa_send_data(1, Drivers.driver1.speed);
-	vofa_send_data(2, Drivers.driver1.torque);
-	vofa_send_data(3, Drivers.driver2.angle);
-	vofa_send_data(4, Drivers.driver2.speed);
-	vofa_send_data(5, Drivers.driver2.torque);
-	vofa_send_data(6, Drivers.driver3.angle);
-	vofa_send_data(7, Drivers.driver3.speed);
-	vofa_send_data(8, Drivers.driver3.torque);
+	vofa_send_data(0, Angle_Data[0]);
+	vofa_send_data(1, Speed_Data[0]);
+	vofa_send_data(2, Torque_Data[0]);
+	vofa_send_data(3, Angle_Data[1]);
+	vofa_send_data(4, Speed_Data[1]);
+	vofa_send_data(5, Torque_Data[1]);
+	vofa_send_data(6, Angle_Data[2]);
+	vofa_send_data(7, Speed_Data[2]);
+	vofa_send_data(8, Torque_Data[2]);
 	vofa_send_data(9, tension_sensor[0]);
 	vofa_send_data(10, tension_sensor[1]);
 	vofa_send_data(11, tension_sensor[2]);
@@ -86,14 +81,16 @@ void HandleScreenReflash() {
 		//Targets_Reflash();
 		Targets_Reflash_Flag = 0;
 	}
-	if (StStus_Reflash_Flag) {
+	if (Status_Reflash_Flag) {
 		Status_Reflash();
-		StStus_Reflash_Flag = 0;
+		Status_Reflash_Flag = 0;
 	}
 }
 
 void HandleControlThread() {
-	static float last_offboard_data[3] = { 0 };
+	static float Control_Data_Last[3] = { 0 };
+	static uint8_t Control_Command_Last[3] = { 0 };
+
 	ADC_Read();
 	PWR_sensor[0] = (float) ADC_PWR_Value[0] / 4096 * 33;	//读取电源信息
 	PWR_sensor[1] = (float) ADC_PWR_Value[1] / 4096 * 33 * 1.11;
@@ -104,17 +101,27 @@ void HandleControlThread() {
 		Tension_Data[i] = (float) ADC_SEN_Value_Kalman[i] * 300 / 4096;	// 假设传感器输出范围为0-3.3V，对应张力0-300N，比例系数为300
 	}
 
-	for (int i = 0; i < 3; i++) {
-		Status_monitor_update(&Tension_Monitors[i], Tension_Data[i]);
-		Status_monitor_update(&Angle_Monitors[i], Angle_Data[i]);
-		Status_monitor_update(&Speed_Monitors[i], Speed_Data[i]);
-		Status_monitor_update(&Torque_Monitors[i], Torque_Data[i]);
+	if (program_mode_code != 888) {
+		Sys_Timeout_Count++;
 	}
-	MonitorGroup_Update(&tension_monitors_group);
-	MonitorGroup_Update(&angle_monitors_group);
-	MonitorGroup_Update(&speed_monitors_group);
-	MonitorGroup_Update(&torque_monitors_group);
 
+	uint16_t Sys_Bitmask = 0x0000;
+	for (int i = 0; i < 3; i++) {
+		Sys_Bitmask |= Status_monitor(&Tension_Monitors[i], Tension_Data[i]);
+		Sys_Bitmask |= Status_monitor(&Angle_Monitors[i], Angle_Data[i]);
+		Sys_Bitmask |= Status_monitor(&Speed_Monitors[i], Speed_Data[i]);
+		Sys_Bitmask |= Status_monitor(&Torque_Monitors[i], Torque_Data[i]);
+	}
+	Sys_Bitmask |= Status_monitor(&Voltage_Monitor, PWR_sensor[1]);
+	Sys_Bitmask |= Status_monitor(&Current_Monitor, PWR_sensor[0]);
+	Sys_Bitmask |= Status_monitor(&Timeout_Monitor, (float) Sys_Timeout_Count);
+	uint16_t Error_Bitmask = Sys_Bitmask & 0xFF00;
+	uint16_t Warning_Bitmask = Sys_Bitmask & 0x00FF;
+
+	HandleError(Error_Bitmask);
+	HandleWarning(Warning_Bitmask);
+
+	static int Return_Mode = 0;
 	switch (program_mode_code) {	//控制循环模式识别
 	case 000:	//空闲
 		parameters_reflash_flag = 1;
@@ -125,10 +132,23 @@ void HandleControlThread() {
 		break;
 	case 103:	//测试程序3
 		break;
+	case 200:	//
+		break;
 	case 201:	//外部信号控制循环
+		if (Return_Mode) {
+			estop(0);
+			set_zero_position_temp(0);
+			for (int i = 0; i < 3; i++) {
+				Control_Command[i] = 16;	//初始化为位置模式 设置位置为零
+				Control_Data[i] = 0;
+				set_angle(i + 1, Control_Data[i], 10, 10, 1);
+			}
+			Return_Mode = 0;
+		}
 		for (int i = 0; i < 3; i++) {
-			if (Control_Data[i] != last_offboard_data[i]) { // 检查数据是否变化
-				last_offboard_data[i] = Control_Data[i]; // 更新记录的值
+			if (Control_Data[i] != Control_Data_Last[i] || Control_Command[i] != Control_Command_Last[i]) { // 检查数据是否变化
+				Control_Data_Last[i] = Control_Data[i]; // 更新记录的值
+				Control_Command_Last[i] = Control_Command[i];
 				switch (Control_Command[i]) {
 				case 20:
 					if (Control_Data[i] > 1.2 || Control_Data[i] < -1.2) { //入口限制
@@ -169,6 +189,7 @@ void HandleControlThread() {
 			Control_Data[i] = 0.15;					//预紧补偿
 			set_torque(i + 1, Control_Data[i], 1, 0);
 		}
+		Return_Mode = 1;
 		break;
 	case 203:					//自定义控制
 		for (int i = 0; i < 3; i++) {
@@ -187,8 +208,9 @@ void HandleControlThread() {
 			float speed_rpm = speed * 60.0f / (3.14159f * 48.0f);
 			Control_Data[i] = speed_rpm;
 
-			set_speed(i + 1, speed_rpm, 1000, 1);// 设置速度控制
+			set_speed(i + 1, speed_rpm, 1000, 1);			// 设置速度控制
 		}
+		Return_Mode = 1;
 		break;
 	default:
 	}
@@ -213,12 +235,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		HandleControlThread();
 		break;
 
-	case (uint32_t) TIM6: // 占用率错误监测基准时钟1000ms
+	case (uint32_t) TIM6: // 占用率监测基准时钟1000ms
 		HAL_TIM_Base_Start_IT(&htim6);
-		CheckAndHandleErrors();
 		system_frequency = system_cycle_counter;
 		system_cycle_counter = 0;
-		system_timeout_flag++;
 		break;
 
 	default:

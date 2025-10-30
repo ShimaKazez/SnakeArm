@@ -33,19 +33,25 @@ void UI_Init(void);
 void PID_Module_Init(void);
 long GetMicros(void);
 
-extern volatile int parameters_reflash_flag, Targets_Reflash_Flag, StStus_Reflash_Flag;
+extern volatile int parameters_reflash_flag, Targets_Reflash_Flag, Status_Reflash_Flag;
 extern volatile int Buttom_Flag[3];
+extern volatile int Buttom_Pushed_Flag[4];
 extern volatile float tension_sensor[3];
 extern volatile float PWR_sensor[2];
 extern volatile float SystemOccupancy;
 extern volatile int system_cycle_counter;
 extern volatile int driver_monitoring_flag;
 extern volatile int program_mode_code;
-extern volatile int system_timeout_flag;
+extern volatile int Sys_Timeout_Count;
 extern volatile int UI_Init_Flag;
 extern volatile int system_frequency;
 extern volatile int screen_sequence;
 extern volatile uint8_t c_Red, c_Green, c_Blue;
+
+extern volatile float Tension_Data[3];
+extern volatile float Angle_Data[3];
+extern volatile float Speed_Data[3];
+extern volatile float Torque_Data[3];
 
 struct ELEMENT {
 	volatile char *Label;
@@ -63,19 +69,6 @@ typedef struct {
 } HOME;
 extern volatile HOME Home;
 
-struct DriverStatus {
-	float angle;
-	float speed;
-	float torque;
-};
-
-typedef struct {
-	volatile struct DriverStatus driver1;
-	volatile struct DriverStatus driver2;
-	volatile struct DriverStatus driver3;
-} DriverS;
-extern volatile DriverS Drivers;
-
 // 定义菜单项结构体
 typedef struct {
 	char *flag_label;
@@ -84,6 +77,8 @@ typedef struct {
 	uint16_t mode_color;
 	int program_mode_code;
 } MenuItem;
+extern MenuItem L1_menu_items[4];
+extern MenuItem L2_menu_items[4];
 void HandleMenuSwitch(MenuItem[], int, int*);
 
 #endif /* LCD_UI_H_ */

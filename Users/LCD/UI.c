@@ -9,23 +9,33 @@
 #include "TimerCallbacks.h"
 
 volatile HOME Home;
-volatile DriverS Drivers;
 volatile float tension_sensor[3];
 volatile float PWR_sensor[2];
 volatile int system_cycle_counter, error_code;
-volatile int system_timeout_flag;
+volatile int Sys_Timeout_Count;
 volatile int screen_sequence;
 volatile int UI_Init_Flag;
 volatile uint8_t c_Red, c_Green, c_Blue;
 volatile int Buttom_Flag[3];
-volatile int parameters_reflash_flag, Targets_Reflash_Flag, StStus_Reflash_Flag;
+volatile int parameters_reflash_flag, Targets_Reflash_Flag, Status_Reflash_Flag;
 volatile int driver_monitoring_flag;
 volatile int program_mode_code;
-int volatile system_frequency;
-int Buttom_Pushed_Flag[4];
+volatile int system_frequency;
+volatile int Buttom_Pushed_Flag[4];
 int Buttom_Pushed_Flag_Last[4];
 int Buttom_Reflash_Flag[4];
 int parameters_reflash_counter, target_reflash_counter, status_reflash_counter;
+volatile float Tension_Data[3] = { 0.0f, 0.0f, 0.0f };
+volatile float Angle_Data[3] = { 0.0f, 0.0f, 0.0f };
+volatile float Speed_Data[3] = { 0.0f, 0.0f, 0.0f };
+volatile float Torque_Data[3] = { 0.0f, 0.0f, 0.0f };
+
+
+// 定义菜单项数组
+MenuItem L1_menu_items[4] = { { "[BACK]", CYAN, "Homepage", GREEN, 000 }, { "Test1", CYAN, "Default", GREEN, 101 }, { "Test2", CYAN, "Default", GREEN, 102 }, { "Test3", CYAN, "Default",
+GREEN, 103 }, };
+MenuItem L2_menu_items[4] = { { "Online", GREEN, "SetZero", GREEN, 201 }, { "Tighten", CYAN, "T=0.15Nm", GREEN, 202 }, { "Enforce", CYAN, "F=20N", GREEN, 203 }, { "[BACK]", CYAN, "Homepage", GREEN,
+		000 }, };
 
 int numN(double num) {
 	int offset = 0;
@@ -143,7 +153,7 @@ void Status_Set(char *flag_label, uint16_t flag_color, char *mode_label, uint16_
 		Home.mode.Label = mode_label;
 		Home.mode.Color = mode_color;
 	}
-	StStus_Reflash_Flag = 1;
+	Status_Reflash_Flag = 1;
 }
 
 void KEY_Scan(void) {
@@ -177,7 +187,7 @@ void KEY_Scan(void) {
 		goto Reflash;
 	}
 	Reflash: if (Buttom_Reflash_Flag[0] || Buttom_Reflash_Flag[1] || Buttom_Reflash_Flag[2] || Buttom_Reflash_Flag[3]) {
-		StStus_Reflash_Flag = 1;
+		Status_Reflash_Flag = 1;
 	}
 	Targets_Reflash_Flag = 1;
 }

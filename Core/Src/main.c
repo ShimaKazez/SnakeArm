@@ -61,9 +61,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-extern volatile uint8_t Control_Command[3];
-extern volatile float Control_Data[3];
-static uint8_t last_offboard_command[3] = { 0 };
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -165,15 +163,6 @@ int main(void) {
 	struct angle_speed_torque angle_speed_torque_1 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
 	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
-	extern volatile float Angle_Data[3];
-	extern volatile float Speed_Data[3];
-	extern volatile float Torque_Data[3];
-
-	// 定义菜单项数组
-	MenuItem L1_menu_items[] = { { "[EXIT]", CYAN, "Return", GREEN, 000 }, { "TEST", CYAN, "TestPrg1", LIGHTBLUE, 101 }, { "TEST", CYAN, "TestPrg2", LIGHTBLUE, 102 }, { "TEST", CYAN, "TestPrg3",
-	LIGHTBLUE, 103 }, };
-	MenuItem L2_menu_items[] = { { "[EXIT]", CYAN, "Return", GREEN, 000 }, { "ONBOARD", GREEN, "ZeroSetted", YELLOW, 201 }, { "CUSTOM", YELLOW, "Tighten", LIGHTBLUE, 202 }, { "CUSTOM", YELLOW,
-			"Enforce", LIGHTBLUE, 203 }, };
 
 	//uint8_t SystemClock = 0;
 	//long SystemTimer = 0;
@@ -226,9 +215,12 @@ int main(void) {
 						HandleMenuSwitch(L1_menu_items, sizeof(L1_menu_items) / sizeof(MenuItem), &PG0_long_press_counter);
 						switch (program_mode_code) {
 						case 000:
-							Status_Set("[READY]", GREEN, "Idling", WHITE);
+							Status_Set("[READY]", GREEN, 0, 0);
 							break;
 						default:
+						}
+						if (ErrorCode_Sys.all == 0) {
+							Status_Set(0, 0, "Normal", GREEN);
 						}
 					}
 				}
@@ -247,9 +239,9 @@ int main(void) {
 						Control_Command[i] = 20;					//初始化为力矩模式 设置力矩为零
 						Control_Data[i] = 0;
 					}
-					Status_Set("ONBOARD", GREEN, "ZeroNone", YELLOW);					//外部信号驱动
+					Status_Set("Offline", YELLOW, "ZeroNone", WHITE);					//外部信号驱动
 					program_mode_code = 200;
-					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
+//					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, SET);
 				}
 
 				if (Buttom_Flag[0]) {
@@ -265,29 +257,39 @@ int main(void) {
 							for (int i = 0; i < 3; i++) {
 								Control_Command[i] = 20;	//初始化为力矩模式 设置力矩为零
 								Control_Data[i] = 0;
+								set_torque(i + 1, Control_Data[i], 1, 0);
 							}
 							break;
 						case 201:
+							estop(0);
 							set_zero_position_temp(0);
-							Status_Set(0, 0, "ZeroSetted", GREEN);
+							Status_Set("Online", GREEN, 0, 0);
 							for (int i = 0; i < 3; i++) {
 								Control_Command[i] = 16;	//初始化为位置模式 设置位置为零
 								Control_Data[i] = 0;
+								set_angle(i + 1, Control_Data[i], 10, 10, 1);
 							}
 							break;
 						case 202:
+							estop(0);
 							for (int i = 0; i < 3; i++) {
 								Control_Command[i] = 20;	//初始化为力矩模式 设置力矩为零
 								Control_Data[i] = 0;
+								set_torque(i + 1, Control_Data[i], 1, 0);
 							}
 							break;
 						case 203:
+							estop(0);
 							for (int i = 0; i < 3; i++) {
 								Control_Command[i] = 22;	//初始化为速度模式 设置速度为零
 								Control_Data[i] = 0;
+								set_speed(i + 1, Control_Data[i], 1000, 1);
 							}
 							break;
 						default:
+						}
+						if (ErrorCode_Sys.all == 0) {
+							Status_Set(0, 0, "Normal", GREEN);
 						}
 					}
 				}
@@ -306,6 +308,7 @@ int main(void) {
 				Torque_Data[1] = angle_speed_torque_2.torque;
 				Torque_Data[2] = angle_speed_torque_3.torque;
 
+				static uint8_t Control_Command_Last[3] = { 0 };
 				for (int i = 0; i < 3; i++) {
 					Home.params[i].num2 = Control_Data[i];
 					switch (Control_Command[i]) {
@@ -320,7 +323,7 @@ int main(void) {
 						break;
 					default:
 					}
-					if (Control_Command[i] != last_offboard_command[i]) {
+					if (Control_Command[i] != Control_Command_Last[i]) {
 						switch (Control_Command[i]) {
 						case 20:
 							Paint_DrawString_EN(125, (63 + i * 18), "T->", &Font16, BLACK, GBLUE);
@@ -333,25 +336,16 @@ int main(void) {
 							break;
 						default:
 						}
-						last_offboard_command[i] = Control_Command[i];
+						Control_Command_Last[i] = Control_Command[i];
 					}
 				}
-				Drivers.driver1.angle = angle_speed_torque_1.angle;
-				Drivers.driver1.speed = angle_speed_torque_1.speed;
-				Drivers.driver1.torque = angle_speed_torque_1.torque;
-				Drivers.driver2.angle = angle_speed_torque_2.angle;
-				Drivers.driver2.speed = angle_speed_torque_2.speed;
-				Drivers.driver2.torque = angle_speed_torque_2.torque;
-				Drivers.driver3.angle = angle_speed_torque_3.angle;
-				Drivers.driver3.speed = angle_speed_torque_3.speed;
-				Drivers.driver3.torque = angle_speed_torque_3.torque;
 				parameters_reflash_flag = 1;
 
 			} else {
 				if (driver_initialization_flag) {
 					estop(0);
 					driver_initialization_flag = 0;
-					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
+//					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, RESET);
 				}
 			}
 
@@ -364,7 +358,7 @@ int main(void) {
 
 			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, main_loop_flag);	//主循环工作标识
 			main_loop_flag = !main_loop_flag;
-			system_timeout_flag = 0;
+			Sys_Timeout_Count = 0;
 		}
 
 		//SystemTimer += (GetMicros() - SystemTimerLast);
