@@ -155,7 +155,7 @@ void Status_monitor_init_all() {
 // 定义限制值数组：{错误下限, 警告下限, 警告上限, 错误上限}
 	const float tension_limits[4] = { 0.0f, 5.0f, 100.0f, 200.0f };
 	const float angle_limits[4] = { -150.0f, -90.0f, 90.0f, 150.0f };
-	const float speed_limits[4] = { -60.0f, -30.0f, 30.0f, 60.0f };
+	const float speed_limits[4] = { -10.0f, -5.0f, 5.0f, 10.0f };
 	const float torque_limits[4] = { -1.2f, -0.8f, 0.8f, 1.2f };
 	const float voltage_limits[4] = { 0.0f, 22.0f, 25.2f, 28.0f };
 	const float current_limits[4] = { 0.0f, 0.0f, 6.0f, 8.0f };
