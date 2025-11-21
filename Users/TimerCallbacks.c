@@ -69,9 +69,9 @@ void HandleScreenReflash() {
 	Home.params[3].num1 = PWR_sensor[1];
 	Home.params[3].num2 = PWR_sensor[0];
 
-	Home.status[0].num1 = tension_sensor[0] / 3.3 * 300;
-	Home.status[1].num1 = tension_sensor[1] / 3.3 * 300;
-	Home.status[2].num1 = tension_sensor[2] / 3.3 * 300;
+	Home.status[0].num1 = tension_sensor[0] / 3.3 * 30 * 9.8 / 2;
+	Home.status[1].num1 = tension_sensor[1] / 3.3 * 30 * 9.8 / 2;
+	Home.status[2].num1 = tension_sensor[2] / 3.3 * 30 * 9.8 / 2;
 
 	if (parameters_reflash_flag) {
 		Parameters_Reflash();
@@ -98,7 +98,7 @@ void HandleControlThread() {
 	for (int i = 0; i < 3; i++) {
 		tension_sensor_raw[i] = (float) ADC_SEN_Value[i] / 4096 * 3.3;	//读取传感器原始信息
 		tension_sensor[i] = (float) ADC_SEN_Value_Kalman[i] * 3.3 / 4096;	//读取传感器信息
-		Tension_Data[i] = (float) ADC_SEN_Value_Kalman[i] * 300 / 4096;	// 假设传感器输出范围为0-3.3V，对应张力0-300N，比例系数为300
+		Tension_Data[i] = (float) ADC_SEN_Value_Kalman[i] * 30 * 9.8 / 2 / 4096;	// 假设传感器输出范围为0-3.3V，对应张力0-300N，比例系数为300
 	}
 
 	if (program_mode_code != 888) {
@@ -186,7 +186,7 @@ void HandleControlThread() {
 	case 202:					//自定义控制循环
 		for (int i = 0; i < 3; i++) {
 			Control_Command[i] = 20;
-			Control_Data[i] = 0.15;					//预紧补偿
+			Control_Data[i] = 0.20;					//预紧补偿
 			set_torque(i + 1, Control_Data[i], 1, 0);
 		}
 		Return_Mode = 1;
@@ -194,11 +194,11 @@ void HandleControlThread() {
 	case 203:					//自定义控制
 		for (int i = 0; i < 3; i++) {
 			Control_Command[i] = 22;
-			float actual_tension = tension_sensor[i] / 3.3f * 300.0f;					// 计算实际张力值
+			float actual_tension = tension_sensor[i] / 3.3f * 30.0f * 9.8f / 2.0f;					// 计算实际张力值
 			float target_tension = 20.0f;					// 目标张力为20
 			float dt = 0.001f;					// 时间间隔（为1ms）
 			float speed = PID_Compute(&pid_tension[i], target_tension, actual_tension, dt);					// 使用PID计算速度控制值
-			float speed_limit[2] = { 20.0f, -20.0f };					// 定义速度限制（mm/s）
+			float speed_limit[2] = { 10.0f, -10.0f };					// 定义速度限制（mm/s）
 			// 应用速度限制
 			if (speed > speed_limit[0]) {
 				speed = speed_limit[0];
