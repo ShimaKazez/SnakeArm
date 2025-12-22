@@ -160,9 +160,9 @@ int main(void) {
 	int driver_initialization_flag = 0;
 	int main_loop_flag = 0;
 	int PG0_long_press_counter = 0;
-	struct angle_speed_torque angle_speed_torque_1 = { 0, 0, 0 };
-	struct angle_speed_torque angle_speed_torque_2 = { 0, 0, 0 };
-	struct angle_speed_torque angle_speed_torque_3 = { 0, 0, 0 };
+	struct angle_speed_torque Driver_AST_1 = { 0, 0, 0 };
+	struct angle_speed_torque Driver_AST_2 = { 0, 0, 0 };
+	struct angle_speed_torque Driver_AST_3 = { 0, 0, 0 };
 
 	//uint8_t SystemClock = 0;
 	//long SystemTimer = 0;
@@ -261,20 +261,44 @@ int main(void) {
 							}
 							break;
 						case 201:
+							HAL_TIM_Base_Stop_IT(&htim7);
 							Status_Set("Online", GREEN, 0, 0);
 							for (int i = 0; i < 3; i++) {
-								if(Control_Command[i]==28){
-									set_zero_position_temp(i);
-									estop(i);
-								}else
-									{
-									estop(i);
-									set_zero_position_temp(i);
+								set_speed(i + 1, 0, 1000, 0);
+							}
+							for (int i = 0; i < 3; i++) {
+								while (!(fabs(Speed_Data[i]) <= 0.1f)) {
+									set_speed(i + 1, 0, 1000, 0);
+									Driver_AST_1 = angle_speed_torque_state(1);
+									Driver_AST_2 = angle_speed_torque_state(2);
+									Driver_AST_3 = angle_speed_torque_state(3);
+									Speed_Data[0] = Driver_AST_1.speed;
+									Speed_Data[1] = Driver_AST_2.speed;
+									Speed_Data[2] = Driver_AST_3.speed;
+								};
+							}
+							for (int i = 0; i < 3; i++) {
+								if (Control_Command[i] == 28) {
+									set_zero_position_temp(i + 1);
+									while (!(fabs(Angle_Data[i]) <= 0.1f)) {
+										set_zero_position_temp(i + 1);
+										Driver_AST_1 = angle_speed_torque_state(1);
+										Driver_AST_2 = angle_speed_torque_state(2);
+										Driver_AST_3 = angle_speed_torque_state(3);
+										Angle_Data[0] = Driver_AST_1.angle;
+										Angle_Data[1] = Driver_AST_2.angle;
+										Angle_Data[2] = Driver_AST_3.angle;
+									};
+									estop(i + 1);
+								} else {
+									estop(i + 1);
+									set_zero_position_temp(i + 1);
 								}
 								Control_Command[i] = 16;	//初始化为位置模式 设置位置为零
 								Control_Data[i] = 0;
 								set_angle(i + 1, Control_Data[i], 10, 10, 1);
 							}
+							HAL_TIM_Base_Start_IT(&htim7);
 							break;
 						case 202:
 							estop(0);
@@ -300,19 +324,19 @@ int main(void) {
 					}
 				}
 
-				angle_speed_torque_1 = angle_speed_torque_state(1);
-				angle_speed_torque_2 = angle_speed_torque_state(2);
-				angle_speed_torque_3 = angle_speed_torque_state(3);
+				Driver_AST_1 = angle_speed_torque_state(1);
+				Driver_AST_2 = angle_speed_torque_state(2);
+				Driver_AST_3 = angle_speed_torque_state(3);
 
-				Angle_Data[0] = angle_speed_torque_1.angle;
-				Angle_Data[1] = angle_speed_torque_2.angle;
-				Angle_Data[2] = angle_speed_torque_3.angle;
-				Speed_Data[0] = angle_speed_torque_1.speed;
-				Speed_Data[1] = angle_speed_torque_2.speed;
-				Speed_Data[2] = angle_speed_torque_3.speed;
-				Torque_Data[0] = angle_speed_torque_1.torque;
-				Torque_Data[1] = angle_speed_torque_2.torque;
-				Torque_Data[2] = angle_speed_torque_3.torque;
+				Angle_Data[0] = Driver_AST_1.angle;
+				Angle_Data[1] = Driver_AST_2.angle;
+				Angle_Data[2] = Driver_AST_3.angle;
+				Speed_Data[0] = Driver_AST_1.speed;
+				Speed_Data[1] = Driver_AST_2.speed;
+				Speed_Data[2] = Driver_AST_3.speed;
+				Torque_Data[0] = Driver_AST_1.torque;
+				Torque_Data[1] = Driver_AST_2.torque;
+				Torque_Data[2] = Driver_AST_3.torque;
 
 				static uint8_t Control_Command_Last[3] = { 0 };
 				for (int i = 0; i < 3; i++) {
