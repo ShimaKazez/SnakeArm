@@ -10,6 +10,17 @@
 #include "UI.h"
 #include "error.h"
 
+// 定义标定点
+#define C1_A 0
+#define C1_F 0.0f
+#define C2_A 4095
+#define C2_F 300.0f
+
+float Cal1_A[3] = { 424, 384, 436 };
+float Cal1_F[3] = { 15.48, 15.48, 15.48 };
+float Cal2_A[3] = { 1331, 1338, 1357 };
+float Cal2_F[3] = { 50.24, 50.24, 50.24 };
+
 float tension_sensor_raw[3];
 
 int waring_flag = 0;
@@ -28,11 +39,13 @@ void HandleDriverMonitoring() {
 	vofa_send_data(9, tension_sensor[0]);
 	vofa_send_data(10, tension_sensor[1]);
 	vofa_send_data(11, tension_sensor[2]);
+//	vofa_send_data(12, tension_sensor_raw[0]);
+//	vofa_send_data(13, tension_sensor_raw[1]);
+//	vofa_send_data(14, tension_sensor_raw[2]);
 //	vofa_send_data(12, (float) system_frequency);
 //	vofa_send_data(13, (float) program_mode_code);
-//	vofa_send_data(14, tension_sensor_raw[0]);
-//	vofa_send_data(15, tension_sensor_raw[1]);
-//	vofa_send_data(16, tension_sensor_raw[2]);
+	vofa_send_data(12, (int) UART_Rx.Rx.RxData2);
+	vofa_send_data(13, UART_Rx.Rx.RxData1);
 
 	vofa_sendframetail();
 	driver_monitoring_flag = 1;
@@ -69,9 +82,9 @@ void HandleScreenReflash() {
 	Home.params[3].num1 = PWR_sensor[1];
 	Home.params[3].num2 = PWR_sensor[0];
 
-	Home.status[0].num1 = tension_sensor[0] / 3.3 * 30 * 9.8 / 2;
-	Home.status[1].num1 = tension_sensor[1] / 3.3 * 30 * 9.8 / 2;
-	Home.status[2].num1 = tension_sensor[2] / 3.3 * 30 * 9.8 / 2;
+	Home.status[0].num1 = Tension_Data[0];
+	Home.status[1].num1 = Tension_Data[1];
+	Home.status[2].num1 = Tension_Data[2];
 
 	if (parameters_reflash_flag) {
 		Parameters_Reflash();
@@ -87,7 +100,25 @@ void HandleScreenReflash() {
 	}
 }
 
+void TensionControlClosedLoop(int channel, float target_tension) {
+	int i = channel;
+	float actual_tension = Tension_Data[i];					// 计算实际张力值
+	float dt = 0.001f;					// 时间间隔（为1ms）
+	float speed = PID_Compute(&pid_tension[i], target_tension, actual_tension, dt);					// 使用PID计算速度控制值
+	float speed_limit[2] = { 10.0f, -10.0f };					// 定义速度限制（mm/s）
+	// 应用速度限制
+	if (speed > speed_limit[0]) {
+		speed = speed_limit[0];
+	} else if (speed < speed_limit[1]) {
+		speed = speed_limit[1];
+	}
+	float speed_rpm = speed * 60.0f / (3.14159f * 48.0f);
+	set_speed(i + 1, speed_rpm, 1000, 1);			// 设置速度控制
+}
+
 void HandleControlThread() {
+	static int Return_Mode = 1;
+	static int Tension_Control_Flag = 0;
 	static float Control_Data_Last[3] = { 0 };
 	static uint8_t Control_Command_Last[3] = { 0 };
 
@@ -96,9 +127,14 @@ void HandleControlThread() {
 	PWR_sensor[1] = (float) ADC_PWR_Value[1] / 4096 * 33 * 1.11;
 
 	for (int i = 0; i < 3; i++) {
-		tension_sensor_raw[i] = (float) ADC_SEN_Value[i] / 4096 * 3.3;	//读取传感器原始信息
+		tension_sensor_raw[i] = (float) ADC_SEN_Value[i];	//读取传感器原始信息
+//		tension_sensor_raw[i] =((float) ADC_SEN_Value[i] - Cal1_A[i]) * (Cal2_F[i] - Cal1_F[i]) / (Cal2_A[i] - Cal1_A[i]) + Cal1_F[i];
+
 		tension_sensor[i] = (float) ADC_SEN_Value_Kalman[i] * 3.3 / 4096;	//读取传感器信息
-		Tension_Data[i] = (float) ADC_SEN_Value_Kalman[i] * 30 * 9.8 / 2 / 4096;	// 假设传感器输出范围为0-3.3V，对应张力0-300N，比例系数为300
+//		tension_sensor[i] =((float) ADC_SEN_Value[i] - Cal1_A[i]) * (Cal2_F[i] - Cal1_F[i]) / (Cal2_A[i] - Cal1_A[i]) + Cal1_F[i];
+
+//		Tension_Data[i] = (float) ADC_SEN_Value_Kalman[i] * 30 * 9.8 / 2 / 4096;	// 假设传感器输出范围为0-3.3V，对应张力0-300N，比例系数为300
+		Tension_Data[i] = ((float) ADC_SEN_Value[i] - Cal1_A[i]) * (Cal2_F[i] - Cal1_F[i]) / (Cal2_A[i] - Cal1_A[i]) + Cal1_F[i];
 	}
 
 	if (program_mode_code != 888) {
@@ -121,7 +157,6 @@ void HandleControlThread() {
 	HandleError(Error_Bitmask);
 	HandleWarning(Warning_Bitmask);
 
-	static int Return_Mode = 0;
 	switch (program_mode_code) {	//控制循环模式识别
 	case 000:	//空闲
 		parameters_reflash_flag = 1;
@@ -149,6 +184,7 @@ void HandleControlThread() {
 			if (Control_Data[i] != Control_Data_Last[i] || Control_Command[i] != Control_Command_Last[i]) { // 检查数据是否变化
 				Control_Data_Last[i] = Control_Data[i]; // 更新记录的值
 				Control_Command_Last[i] = Control_Command[i];
+				Tension_Control_Flag = 0;
 				switch (Control_Command[i]) {
 				case 20:
 					if (Control_Data[i] > 1.2 || Control_Data[i] < -1.2) { //入口限制
@@ -163,6 +199,9 @@ void HandleControlThread() {
 					break;
 				case 22:
 					set_speed(i + 1, Control_Data[i], 1000, 1);
+					break;
+				case 28:
+					Tension_Control_Flag = 1; //张力闭环控制
 					break;
 				case 50:
 					switch (i) {
@@ -182,6 +221,13 @@ void HandleControlThread() {
 				}
 			}
 		}
+		if (Tension_Control_Flag) { //张力闭环控制
+			for (int i = 0; i < 3; i++) {
+				if (Control_Command[i] == 28) {
+					TensionControlClosedLoop(i, Control_Data[i]);	//张力闭环控制
+				}
+			}
+		}
 		break;
 	case 202:					//自定义控制循环
 		for (int i = 0; i < 3; i++) {
@@ -193,22 +239,9 @@ void HandleControlThread() {
 		break;
 	case 203:					//自定义控制
 		for (int i = 0; i < 3; i++) {
-			Control_Command[i] = 22;
-			float actual_tension = tension_sensor[i] / 3.3f * 30.0f * 9.8f / 2.0f;					// 计算实际张力值
-			float target_tension = 20.0f;					// 目标张力为20
-			float dt = 0.001f;					// 时间间隔（为1ms）
-			float speed = PID_Compute(&pid_tension[i], target_tension, actual_tension, dt);					// 使用PID计算速度控制值
-			float speed_limit[2] = { 10.0f, -10.0f };					// 定义速度限制（mm/s）
-			// 应用速度限制
-			if (speed > speed_limit[0]) {
-				speed = speed_limit[0];
-			} else if (speed < speed_limit[1]) {
-				speed = speed_limit[1];
-			}
-			float speed_rpm = speed * 60.0f / (3.14159f * 48.0f);
-			Control_Data[i] = speed_rpm;
-
-			set_speed(i + 1, speed_rpm, 1000, 1);			// 设置速度控制
+			Control_Command[i] = 28;
+			Control_Data[i] = 30;
+			TensionControlClosedLoop(i, Control_Data[i]);	//张力闭环控制20N
 		}
 		Return_Mode = 1;
 		break;

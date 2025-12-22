@@ -34,7 +34,7 @@ volatile float Torque_Data[3] = { 0.0f, 0.0f, 0.0f };
 // 定义菜单项数组
 MenuItem L1_menu_items[4] = { { "[BACK]", CYAN, "Homepage", GREEN, 000 }, { "Test1", CYAN, "Default", GREEN, 101 }, { "Test2", CYAN, "Default", GREEN, 102 }, { "Test3", CYAN, "Default",
 GREEN, 103 }, };
-MenuItem L2_menu_items[4] = { { "Online", GREEN, "SetZero", GREEN, 201 }, { "Tighten", CYAN, "T=0.15Nm", GREEN, 202 }, { "Enforce", CYAN, "F=20N", GREEN, 203 }, { "[BACK]", CYAN, "Homepage", GREEN,
+MenuItem L2_menu_items[4] = { { "Online", GREEN, "SetZero", GREEN, 201 }, { "Tighten", CYAN, "T=0.20Nm", GREEN, 202 }, { "Enforce", CYAN, "F=30N", GREEN, 203 }, { "[BACK]", CYAN, "Homepage", GREEN,
 		000 }, };
 
 int numN(double num) {

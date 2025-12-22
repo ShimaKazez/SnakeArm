@@ -261,10 +261,16 @@ int main(void) {
 							}
 							break;
 						case 201:
-							estop(0);
-							set_zero_position_temp(0);
 							Status_Set("Online", GREEN, 0, 0);
 							for (int i = 0; i < 3; i++) {
+								if(Control_Command[i]==28){
+									set_zero_position_temp(i);
+									estop(i);
+								}else
+									{
+									estop(i);
+									set_zero_position_temp(i);
+								}
 								Control_Command[i] = 16;	//初始化为位置模式 设置位置为零
 								Control_Data[i] = 0;
 								set_angle(i + 1, Control_Data[i], 10, 10, 1);
@@ -321,6 +327,9 @@ int main(void) {
 					case 22:
 						Home.params[i].num1 = Speed_Data[i];
 						break;
+					case 28:
+						Home.params[i].num1 = Speed_Data[i];
+						break;
 					default:
 					}
 					if (Control_Command[i] != Control_Command_Last[i]) {
@@ -333,6 +342,9 @@ int main(void) {
 							break;
 						case 22:
 							Paint_DrawString_EN(125, (63 + i * 18), "V->", &Font16, BLACK, GBLUE);
+							break;
+						case 28:
+							Paint_DrawString_EN(125, (63 + i * 18), "Tc:", &Font16, BLACK, GBLUE);
 							break;
 						default:
 						}

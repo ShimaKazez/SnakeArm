@@ -153,7 +153,7 @@ void Stauts_monitor_init(StatusMonitor *monitor, float variable, float err_low, 
 
 void Status_monitor_init_all() {
 // 定义限制值数组：{错误下限, 警告下限, 警告上限, 错误上限}
-	const float tension_limits[4] = { 0.0f, 3.0f, 50.0f, 80.0f };
+	const float tension_limits[4] = { -20.0f, 3.0f, 150.0f, 180.0f };
 	const float angle_limits[4] = { -150.0f, -90.0f, 90.0f, 150.0f };
 	const float speed_limits[4] = { -10.0f, -5.0f, 5.0f, 10.0f };
 	const float torque_limits[4] = { -1.2f, -0.8f, 0.8f, 1.2f };
