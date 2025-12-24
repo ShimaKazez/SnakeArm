@@ -144,7 +144,10 @@ void HandleControlThread() {
 	uint16_t Sys_Bitmask = 0x0000;
 	for (int i = 0; i < 3; i++) {
 		Sys_Bitmask |= Status_monitor(&Tension_Monitors[i], Tension_Data[i]);
-		Sys_Bitmask |= Status_monitor(&Angle_Monitors[i], Angle_Data[i]);
+//		Sys_Bitmask |= Status_monitor(&Angle_Monitors[i], Angle_Data[i]);
+		if (program_mode_code != 203) {
+		    Sys_Bitmask |= Status_monitor(&Angle_Monitors[i], Angle_Data[i]);
+		}
 		Sys_Bitmask |= Status_monitor(&Speed_Monitors[i], Speed_Data[i]);
 		Sys_Bitmask |= Status_monitor(&Torque_Monitors[i], Torque_Data[i]);
 	}
